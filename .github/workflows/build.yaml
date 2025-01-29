@@ -1,4 +1,4 @@
-name: spack-build-cache
+name: common-build-cache
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
     - cron: '0 0 * * SAT'
 
 jobs:
-  spack-build-cache:
+  common-build-cache:
     strategy:
       fail-fast: false
       matrix:
@@ -198,5 +198,5 @@ jobs:
           spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
           rc=$?
           set -e
-          spack buildcache push --update-index spack-build-cache
+          spack buildcache push --update-index emc-common-build-cache
           return $rc
