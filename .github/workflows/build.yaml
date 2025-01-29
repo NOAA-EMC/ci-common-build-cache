@@ -170,6 +170,7 @@ jobs:
             spack config add "packages:gcc-runtime:require:'%gcc@${gccver}'"
           fi
           if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
+            spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
           elif [ ${{ matrix.config.compiler }} == 'intel' ]; then
             intelversion=$(spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/bin/intel64/ | grep -oP "intel@\K[\d\.]+")
