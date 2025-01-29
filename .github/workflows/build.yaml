@@ -1,0 +1,199 @@
+name: spack-build-cache
+on:
+  push:
+    branches:
+      - main
+# Do a full rebuild from scratch midnight UTC Saturday:
+  schedule:
+    - cron: '0 0 * * SAT'
+
+jobs:
+  spack-build-cache:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            compiler: "gcc",
+            compiler-version: "10",
+            os: "ubuntu-22.04",
+            mpi: "mpich",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "11",
+            os: "ubuntu-22.04",
+            mpi: "mpich",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "12",
+            os: "ubuntu-22.04",
+            mpi: "mpich",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "12",
+            os: "ubuntu-24.04",
+            mpi: "mpich",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "13",
+            os: "ubuntu-24.04",
+            mpi: "mpich",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "14",
+            os: "ubuntu-24.04",
+            mpi: "mpich",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "10",
+            os: "ubuntu-22.04",
+            mpi: "openmpi",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "11",
+            os: "ubuntu-22.04",
+            mpi: "openmpi",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "12",
+            os: "ubuntu-22.04",
+            mpi: "openmpi",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "12",
+            os: "ubuntu-24.04",
+            mpi: "openmpi",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "13",
+            os: "ubuntu-24.04",
+            mpi: "openmpi",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "gcc",
+            compiler-version: "14",
+            os: "ubuntu-24.04",
+            mpi: "openmpi",
+            mpi-version: ":",
+          }
+        - {
+            compiler: "intel",
+            compiler-version: "2023.2.1",
+            os: "ubuntu-22.04",
+            mpi: "intel-oneapi-mpi",
+            mpi-version: "2021.14",
+          }
+        - {
+            compiler: "intel",
+            compiler-version: "2023.2.1",
+            os: "ubuntu-24.04",
+            mpi: "intel-oneapi-mpi",
+            mpi-version: "2021.14",
+          }
+        - {
+            compiler: "oneapi",
+            compiler-version: "2025.0",
+            os: "ubuntu-22.04",
+            mpi: "intel-oneapi-mpi",
+            mpi-version: "2021.14",
+          }
+        - {
+            compiler: "oneapi",
+            compiler-version: "2025.0",
+            os: "ubuntu-24.04",
+            mpi: "intel-oneapi-mpi",
+            mpi-version: "2021.14",
+          }
+    runs-on: ${{ matrix.config.os }}
+    permissions:
+      packages: write
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      - name: "Get Spack"
+        uses: spack/setup-spack@v2.1.1
+      - name: "Get Intel"
+        uses: NOAA-EMC/ci-install-intel-toolkit@develop
+        if: ${{ matrix.config.compiler == 'intel' || matrix.config.compiler == 'oneapi' }}
+        with:
+          install-classic: ${{ matrix.config.compiler == 'intel' }}
+          classic-version: ${{ matrix.config.compiler-version }}
+          install-oneapi: ${{ matrix.config.compiler == 'oneapi' }}
+          oneapi-version: ${{ matrix.config.compiler-version }}
+          install-mpi: true
+          mpi-version: ${{ matrix.config.mpi-version }}
+          compiler-setup: ${{ matrix.config.compiler }}
+      - name: "Build and cache packages"
+        shell: spack-bash {0}
+        env:
+          OCI_USERNAME: ${{ github.repository_owner }}
+          OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo mv /usr/local /usr/local_mv
+          # Set up mirror for build caching:
+          spack mirror add spack-build-cache oci://ghcr.io/$OCI_USERNAME/ci-playground
+          spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN spack-build-cache
+          COMPILER="${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}"
+          # Activate environment and set up compilers:
+          spack env activate .
+          spack config add 'config:install_tree:padded_length:200'
+          if [ ${{ matrix.config.compiler }} == 'gcc' ]; then
+            sudo apt install gcc-${{ matrix.config.compiler-version }} g++-${{ matrix.config.compiler-version }} gfortran-${{ matrix.config.compiler-version }}
+            spack config add "packages:gcc-runtime:require:'%gcc@${{ matrix.config.compiler-version }}'"
+          else # set GCC backend for Intel to be the Ubuntu default version of GCC
+            if [ ${{ matrix.config.os }} == ubuntu-22.04 ]; then gccver=11; fi
+            if [ ${{ matrix.config.os }} == ubuntu-24.04 ]; then gccver=13; fi
+            spack config add "packages:gcc-runtime:require:'%gcc@${gccver}'"
+          fi
+          if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
+            spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
+          elif [ ${{ matrix.config.compiler }} == 'intel' ]; then
+            intelversion=$(spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/bin/intel64/ | grep -oP "intel@\K[\d\.]+")
+            sed 's|environment: {}|environment:\n        prepend_path: {LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin}|' -i spack.yaml
+            # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
+            for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake; do
+              spack config add "packages:${pkg}:require:'%gcc@${gccver}'"
+            done
+            COMPILER=intel@$intelversion
+          fi
+          spack config add "packages:all:prefer:['%$COMPILER']"
+          # MPI setup.
+          spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
+          if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
+            sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" spack.yaml
+            spack config add "packages:mpi:buildable:false"
+          fi
+          # Find GCC:
+          spack external find gcc git git-lfs
+          cat spack.yaml
+          # Build-n-cache:
+          spack concretize --fresh |& tee log.concretize
+          if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
+          # Don't immediately fail on failed installation so we can still cache whatever was built:
+          set +e
+          spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
+          rc=$?
+          set -e
+          spack buildcache push --update-index spack-build-cache
+          return $rc
