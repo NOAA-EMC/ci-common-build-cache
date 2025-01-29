@@ -194,6 +194,7 @@ jobs:
           # Build-n-cache:
           spack concretize --fresh |& tee log.concretize
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
+          spack config add 'config:build_stage:/dev/shm/spack'
           # Don't immediately fail on failed installation so we can still cache whatever was built:
           set +e
           spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
