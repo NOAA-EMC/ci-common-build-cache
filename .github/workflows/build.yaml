@@ -131,8 +131,10 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
+
       - name: "Get Spack"
         uses: spack/setup-spack@v2.1.1
+
       - name: "Get Intel"
         uses: NOAA-EMC/ci-install-intel-toolkit@develop
         if: ${{ matrix.config.compiler == 'intel' || matrix.config.compiler == 'oneapi' }}
@@ -144,6 +146,7 @@ jobs:
           install-mpi: true
           mpi-version: ${{ matrix.config.mpi-version }}
           compiler-setup: ${{ matrix.config.compiler }}
+
       - name: "Build and cache packages"
         shell: spack-bash {0}
         env:
@@ -152,8 +155,8 @@ jobs:
         run: |
           sudo mv /usr/local /usr/local_mv
           # Set up mirror for build caching:
-          spack mirror add spack-build-cache oci://ghcr.io/$OCI_USERNAME/ci-playground
-          spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN spack-build-cache
+          spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
+          spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
           COMPILER="${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}"
           # Activate environment and set up compilers:
           spack env activate .
