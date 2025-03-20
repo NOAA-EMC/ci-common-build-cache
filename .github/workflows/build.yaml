@@ -185,7 +185,7 @@ jobs:
           if [[ " oneapi intel " =~ " ${{ matrix.config.compiler }} " ]]; then
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
           fi
-          spack config add "concretizer:reuse:include:['%clang']"
+          spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           spack config add "packages:all:prefer:['%$COMPILER']"
           spack config add "packages:all:require:'target=x86_64'"
           # MPI setup.
