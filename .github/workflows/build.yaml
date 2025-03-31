@@ -176,7 +176,9 @@ jobs:
           fi
           if [ ${{ matrix.config.compiler }} == 'intel' ]; then
             intelversion=$(spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/bin/intel64/ | grep -oP "intel-oneapi-compilers-classic@\K[\d\.]+")
-            sed 's|environment: {}|environment:\n        prepend_path: {LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin}|' -i spack.yaml
+            ldlibpath_intel=/opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin
+            sed -i "s|extra_attributes:|&\n           environment: {prepend_path: {LD_LIBRARY_PATH: ${ldlibpath_intel}}}|" spack.yaml
+            #sed 's|environment: {}|environment:\n        prepend_path: {LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin}|' -i spack.yaml
             # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
             for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake; do
               spack config add "packages:${pkg}:require:'%gcc@${gccver}'"
