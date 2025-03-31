@@ -153,6 +153,7 @@ jobs:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -x
           sudo mv /usr/local /usr/local_mv
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
