@@ -170,7 +170,7 @@ jobs:
             if [ ${{ matrix.config.os }} == ubuntu-24.04 ]; then gccver=13; fi
             spack config add "packages:gcc-runtime:require:'%gcc@${gccver}'"
           fi
-          if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
+          if [[ " intel oneapi " =~ ${{ matrix.config.compiler }} ]]; then
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
           elif [ ${{ matrix.config.compiler }} == 'intel' ]; then
