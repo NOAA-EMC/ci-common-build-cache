@@ -212,5 +212,5 @@ jobs:
           spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
           rc=$?
           set -e
-          spack buildcache push --update-index emc-common-build-cache
+          spack buildcache push --unsigned --with-build-dependencies --update-index emc-common-build-cache
           return $rc
