@@ -193,7 +193,7 @@ jobs:
           fi
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           sed -i 's|@compiler@|${{ matrix.config.compiler }}|g' $SPACK_ENV/spack.yaml
-          spack config add "packages:all:require:'target=x86_64'"
+          spack config add "packages:all:target:[x86_64]"
           # MPI setup.
           spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
           if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
