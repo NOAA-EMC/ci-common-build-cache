@@ -10,7 +10,7 @@ spack:
   - libpng
   - openblas
   - w3emc@2.11
-  - zlib-ng +compat
+  - zlib
   - g2@3.5.1
 # GSI (https://github.com/NOAA-EMC/GSI/blob/develop/ci/spack.yaml):
   - netcdf-c@4.9.2 +mpi ~blosc +shared
