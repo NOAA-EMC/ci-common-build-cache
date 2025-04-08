@@ -4,28 +4,28 @@ spack:
     unify: when_possible
   specs:
 # Various NCEPLIBS dependencies:
-  - bacio %@compiler@
-  - g2c %@compiler@
-  - jasper %@compiler@
-  - libpng %@compiler@
-  - openblas %@compiler@
-  - g2@3.5.1 %@compiler@
-  - w3emc@2.11.0 %@compiler@
+  - bacio
+  - g2c
+  - jasper
+  - libpng
+  - openblas
+  - g2@3.5.1
+  - w3emc@2.11.0
 # GSI (https://github.com/NOAA-EMC/GSI/blob/develop/ci/spack.yaml):
-  - netcdf-c@4.9.2 +mpi ~blosc +shared %@compiler@
-  - netcdf-fortran@4.6.1 %@compiler@
-  - bufr@11.7.0 %@compiler@
-  - bacio@2.4.1 %@compiler@
-  - w3emc@2.10.0 %@compiler@
-  - sp@2.5.0 %@compiler@
-  - ip@4.3.0 %@compiler@
-  - sigio@2.3.3 %@compiler@
-  - sfcio@1.4.2 %@compiler@
-  - nemsio@2.5.4 %@compiler@
-  - wrf-io@1.2.0 %@compiler@
-  - ncio@1.1.2 %@compiler@
-  - crtm@2.4.0.1 %@compiler@
-  - gsi-ncdiag@1.1.2 %@compiler@
+  - netcdf-c@4.9.2 +mpi ~blosc +shared
+  - netcdf-fortran@4.6.1
+  - bufr@11.7.0
+  - bacio@2.4.1
+  - w3emc@2.10.0
+  - sp@2.5.0
+  - ip@4.3.0
+  - sigio@2.3.3
+  - sfcio@1.4.2
+  - nemsio@2.5.4
+  - wrf-io@1.2.0
+  - ncio@1.1.2
+  - crtm@2.4.0.1
+  - gsi-ncdiag@1.1.2
   packages:
     cmake:
       require: ~ncurses
