@@ -99,14 +99,14 @@ jobs:
           }
         - {
             compiler: "intel",
-            compiler-version: "2023.2.4",
+            compiler-version: "2023.2.1",
             os: "ubuntu-22.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
           }
         - {
             compiler: "intel",
-            compiler-version: "2023.2.4",
+            compiler-version: "2023.2.1",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
