@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - spack-compilers-as-nodes
 # Do a full rebuild from scratch midnight UTC Saturday:
   schedule:
     - cron: '0 0 * * SAT'
