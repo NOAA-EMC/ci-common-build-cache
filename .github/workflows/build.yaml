@@ -179,7 +179,7 @@ jobs:
             sed 's|environment: {}|environment:\n        prepend_path: {LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin}|' -i spack.yaml
             # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
             for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake; do
-              spack config add "packages:${pkg}:require:'^gcc@${gccver}'"
+              spack config add "packages:${pkg}:require:'^[virtuals=c,cxx,fortran] gcc@${gccver}'"
             done
           fi
           compilerstoallow="'^${{ matrix.config.compiler }}@${resolvedversion}'"
@@ -187,7 +187,7 @@ jobs:
             compilerstoallow="${compilerstoallow},'^gcc@${gccver}'"
           fi
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
-          spack config add "packages:all:prefer:['^${{ matrix.config.compiler }}${resolvedversion:+@$resolvedversion}']"
+          spack config add "packages:all:require:['^[virtuals=c,cxx,fortran] ${{ matrix.config.compiler }}${resolvedversion:+@$resolvedversion}']"
           spack config add "packages:all:require:'target=x86_64'"
           # MPI setup.
           spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
