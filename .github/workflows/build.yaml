@@ -173,6 +173,7 @@ jobs:
           if [[ " intel oneapi " =~ ${{ matrix.config.compiler }} ]]; then
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
+            spack config add "packages:all:prefer:['%${{ matrix.config.compiler }}']"
           fi
           if [ ${{ matrix.config.compiler }} == 'intel' ]; then
             intelversion=$(spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/bin/intel64/ | grep -oP "intel-oneapi-compilers-classic@\K[\d\.]+")
