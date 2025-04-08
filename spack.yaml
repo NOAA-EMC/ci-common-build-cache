@@ -1,7 +1,7 @@
 spack:
   view: false
   concretizer:
-    unify: true
+    unify: when_possible
   specs:
 # Various NCEPLIBS dependencies:
   - bacio
