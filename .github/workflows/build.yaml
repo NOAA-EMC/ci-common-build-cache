@@ -192,7 +192,8 @@ jobs:
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
           fi
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
-          spack config add "packages:all:require:'target=x86_64 %${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}'"
+          spack config add "packages:all:require:'target=x86_64'"
+          spack config add "packages:all:require:'%${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}'"
           # MPI setup.
           spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
           if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
