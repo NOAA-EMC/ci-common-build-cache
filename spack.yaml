@@ -10,7 +10,6 @@ spack:
   - libpng
   - openblas
   - w3emc@2.11
-  - zlib-ng +compat
   - g2@3.5.1
 # GSI (https://github.com/NOAA-EMC/GSI/blob/develop/ci/spack.yaml):
   - netcdf-c@4.9.2 +mpi ~blosc +shared
@@ -27,3 +26,8 @@ spack:
   - ncio@1.1.2
   - crtm@2.4.0.1
   - gsi-ncdiag@1.1.2
+  packages:
+    cmake:
+      require: ~ncurses
+    zlib-api:
+      require: 'zlib-ng +compat'
