@@ -134,8 +134,6 @@ jobs:
 
       - name: "Get Spack"
         uses: spack/setup-spack@v2.1.1
-        with:
-          ref: 50dbf5dac445f19a86ece28c1def886be118c392
 
       - name: "Get Intel"
         uses: NOAA-EMC/ci-install-intel-toolkit@develop
@@ -199,7 +197,6 @@ jobs:
           fi
           # Find GCC:
           spack external find gcc git git-lfs
-          echo "=== spack.yaml: ==="
           cat spack.yaml
           # Build-n-cache:
           spack concretize --fresh |& tee log.concretize
