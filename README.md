@@ -13,3 +13,6 @@ For a package that does not have its own Spack recipe (i.e., only its dependenci
 ```console
 $ spack mirror add emc-common-build-cache oci://ghcr.io/NOAA-EMC/ci-common-build-cache
 ```
+
+> [!NOTE]
+> Currently, this CI workflow uses Spack commit [a9c879d](https://github.com/spack/spack/commit/a9c879d53e758f67cdbf4cec919425cb2a3a1082), which is the last commit of develop prior to the implementation of compilers as nodes (i.e., providers of c/cxx/fortran virtual packages). Those changes are substantial, significantly affect hashes/concretization, and still have some issues. If using these cached packages, be sure to use a commit prior to a9c879d, or simply use [ci-test-spack-package](https://github.com/NOAA-EMC/ci-test-spack-package) which will automatically use the same hash.
