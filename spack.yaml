@@ -6,7 +6,7 @@ spack:
 # Various NCEPLIBS dependencies:
   - bacio
   - g2c
-  - jasper +jpeg
+  - jasper
   - libpng
   - openblas
   - w3emc@2.11
@@ -27,3 +27,6 @@ spack:
   - ncio@1.1.2
   - crtm@2.4.0.1
   - gsi-ncdiag@1.1.2
+packages:
+  jasper:
+    require: +jpeg
