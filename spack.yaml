@@ -5,12 +5,14 @@ spack:
   specs:
 # Various NCEPLIBS dependencies:
   - bacio@develop
+  - bacio@2.6.0
   - g2c@2
   - g2c@develop
   - jasper
   - libpng
   - openblas
   - w3emc@2.11
+  - w3emc@2.12
   - w3emc@develop
   - zlib
   - g2@3.5.1
