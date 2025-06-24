@@ -228,8 +228,8 @@ jobs:
             label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
             label=${label//:/-}
             docker build \
-              -t oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:latest \
-              -t oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:${{ github.sha }} \
+              -t ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:latest \
+              -t ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:${{ github.sha }} \
               .
             docker push oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:latest
             docker push oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:${{ github.sha }}
