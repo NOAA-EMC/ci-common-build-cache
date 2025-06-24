@@ -222,7 +222,7 @@ jobs:
           ### Generate container image with NCEPLIBS dependencies
           if [ "${{ matrix.config.build-container-nceplibs }}" == true ]; then
             spack remove --all
-            spack add bacio w3emc+bufr bufr+python g2+aec g2c+aec+png+jasper g2c+aec+png+openjpeg ncio ip precision=4,d,8 wgrib2+netcdf+ipolates
+            spack add bacio w3emc+bufr bufr+python g2 g2c+aec+png+jasper g2c+aec+png+openjpeg ncio ip precision=4,d,8 wgrib2+netcdf+ipolates
             echo "  container:" >> $SPACK_ENV/spack.yaml
             echo "    images:" >> $SPACK_ENV/spack.yaml
             echo "      os: ubuntu:24.04" >> $SPACK_ENV/spack.yaml
