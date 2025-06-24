@@ -230,9 +230,9 @@ jobs:
                 nceplibs-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}
               for p in w3emc g2 g2c bufr ip; do
                 if [ $versionset == numbered ]; then
-                  NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@{version}/{hash:7}' $p | sort -V | tail -1)"
+                  NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@{version}/{hash:7}' ${p}@:999 | sort -V | tail -1)"
                 else
-                  NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@develop/{hash:7}' $p | sort -V | tail -1)"
+                  NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@{version}/{hash:7}' ${p}@develop | sort -V | tail -1)"
                 fi
               done
               spack buildcache push --only dependencies --with-build-dependencies --update-index \
