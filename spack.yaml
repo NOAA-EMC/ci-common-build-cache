@@ -17,6 +17,7 @@ spack:
   - g2@develop +g2c_compare ^g2c +build_v2_api
   - ip@5
   - ip@develop
+  - bufr@develop
 # GSI (https://github.com/NOAA-EMC/GSI/blob/develop/ci/spack.yaml):
   - netcdf-c@4.9.2 +mpi ~blosc +shared
   - netcdf-fortran@4.6.1
