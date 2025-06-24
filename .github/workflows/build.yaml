@@ -221,8 +221,8 @@ jobs:
           if [ $rc -ne 0 ]; then return $rc; fi
           ### Generate container image with NCEPLIBS dependencies
           if [ "${{ matrix.config.build-container-nceplibs }}" == true ]; then
-            for versionset in numbered develop; do
-              label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
+            for versionset in numvers devvers; do
+              label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}-${versionset}
               label=${label//:/x}
               spack mirror add \
                 --oci-username-variable OCI_USERNAME \
