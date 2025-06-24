@@ -47,6 +47,7 @@ jobs:
             os: "ubuntu-24.04",
             mpi: "mpich",
             mpi-version: ":",
+            build-container-nceplibs: true,
           }
         - {
             compiler: "gcc",
@@ -149,6 +150,13 @@ jobs:
           mpi-version: ${{ matrix.config.mpi-version }}
           compiler-setup: ${{ matrix.config.compiler }}
 
+      - name: "Log in to ghcr.io"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: "Build and cache packages"
         shell: spack-bash {0}
         env:
@@ -210,4 +218,18 @@ jobs:
           rc=$?
           set -e
           spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
-          return $rc
+          if [ $rc -ne 0 ]; then return $rc; fi
+          ### Generate container image with NCEPLIBS dependencies
+          if [ "${{ matrix.config.build-container-nceplibs }}" == true ]; then
+            spack remove --all
+            spack add bacio w3emc+bufr bufr+python g2+aec g2c+aec+png+jasper g2c+aec+png+openjpeg ncio ip precision=4,d,8 wgrib2+netcdf+ipolates+g2c
+            spack containerize > Dockerfile
+            sed -i 's:spack install :spack install --only dependencies:' Dockerfile
+            label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
+            docker build \
+              -t oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:latest \
+              -t oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:${{ github.sha }} \
+              .
+            docker push oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:latest
+            docker push oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache/nceplibs-${label}:${{ github.sha }}
+          fi
