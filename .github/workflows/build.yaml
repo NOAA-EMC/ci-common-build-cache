@@ -228,7 +228,7 @@ jobs:
               --oci-password-variable OCI_TOKEN \
               nceplibs-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}
             for p in w3emc g2 g2c bufr ip; do
-              NCEPLIBS_SPECS+=" $(spack find --format '{name}@{version}/{hash:7}' $p | sort -V | tail -1)"
+              NCEPLIBS_SPECS+=" $(spack find --format '{name}@{version}/{hash:7}' $p | sort -V | tail -1 | grep -oP '[\w\./@-]+')"
             done
             spack buildcache push --only dependencies --with-build-dependencies --update-index \
               --base-image ubuntu:22.04 --tag latest nceplibs-env \
