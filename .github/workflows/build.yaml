@@ -15,29 +15,8 @@ jobs:
         config:
         - {
             compiler: "gcc",
-            compiler-version: "10",
-            os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
             compiler-version: "11",
             os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-24.04",
             mpi: "mpich",
             mpi-version: ":",
           }
@@ -58,29 +37,8 @@ jobs:
           }
         - {
             compiler: "gcc",
-            compiler-version: "10",
-            os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
             compiler-version: "11",
             os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-24.04",
             mpi: "openmpi",
             mpi-version: ":",
           }
@@ -235,8 +193,9 @@ jobs:
                   NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@{version}/{hash:7}' ${p}@develop | sort -V | tail -1)"
                 fi
               done
+              image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
               spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
-                --base-image ubuntu:22.04 --tag latest nceplibs-env-${versionset} \
+                --base-image ${image} --tag latest nceplibs-env-${versionset} \
                 $NCEPLIBS_SPECS
             done
           fi
