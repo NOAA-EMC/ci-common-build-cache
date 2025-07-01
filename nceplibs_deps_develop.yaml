@@ -1,0 +1,18 @@
+spack:
+  view: false
+  concretizer:
+    unify: true
+  specs:
+  - bacio@develop
+  - g2@develop
+  - g2c@develop
+  - ip@develop precision=4,d,8
+  - w3emc@develop precision=4,d,8
+  - jasper +jpeg
+  - libpng
+  - openblas
+  - zlib-ng
+  - netcdf-fortran ^netcdf-c +mpi  ^hdf5 +mpi
+  - python@3.11
+  - py-nump
+  - doxygen@1.9.8
