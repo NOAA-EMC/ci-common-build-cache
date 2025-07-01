@@ -89,7 +89,7 @@ jobs:
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
           COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
           # Activate environment and set up compilers:
-          ln -s nceplibs_deps_${{ matrix.config.nceplibs_versions }}.yaml spack.yaml
+          ln -s nceplibs_deps_${{ matrix.config.nceplibs-versions }}.yaml spack.yaml
           spack env activate .
           if [ ${{ matrix.config.os }} == ubuntu-22.04 ]; then gccver=11; fi
           if [ ${{ matrix.config.os }} == ubuntu-24.04 ]; then gccver=13; fi

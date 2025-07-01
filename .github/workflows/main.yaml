@@ -160,8 +160,9 @@ jobs:
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
-          COMPILER="${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}"
+          COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
           # Activate environment and set up compilers:
+          ln -s main.yaml spack.yaml
           spack env activate .
           spack config add 'config:install_tree:padded_length:200'
           if [ ${{ matrix.config.compiler }} == 'gcc' ]; then
