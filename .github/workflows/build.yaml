@@ -221,19 +221,16 @@ jobs:
           if [ $rc -ne 0 ]; then return $rc; fi
           ### Generate container image with NCEPLIBS dependencies
           if [ "${{ matrix.config.build-container-nceplibs }}" == true ]; then
-            for versionset in numbered develop; do
-              label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
-              label=${label//:/x}
-              spack mirror add \
-                --oci-username-variable OCI_USERNAME \
-                --oci-password-variable OCI_TOKEN \
-                nceplibs-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}
-              for p in w3emc g2 g2c bufr ip; do
-                if [ $versionset == numbered ]; then version='{version}'; else version=develop; fi
-                NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@${version}/{hash:7}' $p | sort -V | tail -1)"
-              done
-              spack buildcache push --only dependencies --with-build-dependencies --update-index \
-                --base-image ubuntu:22.04 --tag latest nceplibs-env \
-                $NCEPLIBS_SPECS
+            label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
+            label=${label//:/x}
+            spack mirror add \
+              --oci-username-variable OCI_USERNAME \
+              --oci-password-variable OCI_TOKEN \
+              nceplibs-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}
+            for p in w3emc g2 g2c bufr ip; do
+              NCEPLIBS_SPECS+=" $(SPACK_COLOR=never spack find --format '{name}@{version}/{hash:7}' $p | sort -V | tail -1)"
             done
+            spack buildcache push --only dependencies --with-build-dependencies --update-index \
+              --base-image ubuntu:22.04 --tag latest nceplibs-env \
+              $NCEPLIBS_SPECS
           fi
