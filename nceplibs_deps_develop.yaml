@@ -4,8 +4,8 @@ spack:
     unify: true
   specs:
   - bacio@develop
-  - g2@develop
-  - g2c@develop
+  - g2@develop +g2c_compare
+  - g2c@develop +utils +build_v2_api
   - ip@develop precision=4,d,8
   - w3emc@develop precision=4,d,8
   - jasper +jpeg
