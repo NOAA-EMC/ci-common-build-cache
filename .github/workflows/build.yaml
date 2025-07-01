@@ -226,7 +226,7 @@ jobs:
             spack containerize > Dockerfile
             sed -i 's:spack install :spack install --only dependencies:' Dockerfile
             label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
-            label=${label//:/x}
+            label=${label//:/X}
             docker build \
               -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}:latest \
               -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}:${{ github.sha }} \
