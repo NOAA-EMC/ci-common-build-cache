@@ -223,12 +223,14 @@ jobs:
           if [ "${{ matrix.config.build-container-nceplibs }}" == true ]; then
             spack remove --all
             spack add bacio w3emc+bufr bufr+python g2+aec g2c+aec+png+jasper g2c+aec+png+openjpeg ncio ip precision=4,d,8 wgrib2+netcdf+ipolates
-            echo "  container:" >> $SPACK_ENV/spack.yaml
-            echo "    images:" >> $SPACK_ENV/spack.yaml
-            echo "      os: ubuntu:24.04" >> $SPACK_ENV/spack.yaml
-            echo "      spack:" >> $SPACK_ENV/spack.yaml
-            echo "        url: https://github.com/spack/spack" >> $SPACK_ENV/spack.yaml
-            echo "        ref: a9c879d53e758f67cdbf4cec919425cb2a3a1082" >> $SPACK_ENV/spack.yaml
+            cat << 'EOF' >> "$SPACK_ENV/spack.yaml"
+              container:
+                images:
+                  os: ubuntu:24.04
+                  spack:
+                    url: https://github.com/spack/spack
+                    ref: a9c879d53e758f67cdbf4cec919425cb2a3a1082
+            EOF
             spack containerize > Dockerfile
             sed -i 's:spack install :spack install --only dependencies :' Dockerfile
             label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
