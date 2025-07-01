@@ -136,14 +136,12 @@ jobs:
           spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
           if [ $rc -ne 0 ]; then return $rc; fi
           ### Generate container image with NCEPLIBS dependencies
-          if [ "${{ matrix.config.build-container-nceplibs }}" == true ]; then
-            label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}-${{ matrix.config.nceplibs_versions }}
-            label=${label//:/x}
-            spack mirror add \
-              --oci-username-variable OCI_USERNAME \
-              --oci-password-variable OCI_TOKEN \
-              nceplibs-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}
-            image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
-            spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
-              --base-image ${image} --tag latest nceplibs-env
-          fi
+          label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}-${{ matrix.config.nceplibs_versions }}
+          label=${label//:/x}
+          spack mirror add \
+            --oci-username-variable OCI_USERNAME \
+            --oci-password-variable OCI_TOKEN \
+            nceplibs-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/nceplibs-${label}
+          image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
+          spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
+            --base-image ${image} --tag latest nceplibs-env
