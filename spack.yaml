@@ -14,7 +14,7 @@ spack:
   - w3emc@develop
   - zlib
   - g2@3.5.1
-  - g2@develop +g2c_compare ^g2c +build_v2_api
+  - g2@develop +g2c_compare
   - ip@5
   - ip@develop
 # GSI (https://github.com/NOAA-EMC/GSI/blob/develop/ci/spack.yaml):
