@@ -1,4 +1,4 @@
-name: common-build-cache
+name: build-nceplibs-deps
 on:
   push:
     branches:
