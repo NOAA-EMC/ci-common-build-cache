@@ -16,3 +16,5 @@ spack:
   - python@3.11
   - py-numpy
   - doxygen@1.9.8
+  repos:
+  - $env/custom_repo
