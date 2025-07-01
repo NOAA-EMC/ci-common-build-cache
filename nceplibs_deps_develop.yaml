@@ -14,5 +14,5 @@ spack:
   - zlib-ng
   - netcdf-fortran ^netcdf-c +mpi  ^hdf5 +mpi
   - python@3.11
-  - py-nump
+  - py-numpy
   - doxygen@1.9.8
