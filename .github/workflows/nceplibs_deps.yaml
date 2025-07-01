@@ -136,7 +136,7 @@ jobs:
           spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
           if [ $rc -ne 0 ]; then return $rc; fi
           ### Generate container image with NCEPLIBS dependencies
-          label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}-${{ matrix.config.nceplibs_versions }}
+          label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}-${{ matrix.config.nceplibs-versions }}
           label=${label//:/x}
           spack mirror add \
             --oci-username-variable OCI_USERNAME \
