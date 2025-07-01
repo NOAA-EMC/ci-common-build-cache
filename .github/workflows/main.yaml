@@ -15,29 +15,8 @@ jobs:
         config:
         - {
             compiler: "gcc",
-            compiler-version: "10",
-            os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
             compiler-version: "11",
             os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-24.04",
             mpi: "mpich",
             mpi-version: ":",
           }
@@ -50,36 +29,8 @@ jobs:
           }
         - {
             compiler: "gcc",
-            compiler-version: "14",
-            os: "ubuntu-24.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "10",
-            os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
             compiler-version: "11",
             os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "12",
-            os: "ubuntu-24.04",
             mpi: "openmpi",
             mpi-version: ":",
           }
