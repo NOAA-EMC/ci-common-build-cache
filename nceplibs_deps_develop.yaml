@@ -15,6 +15,5 @@ spack:
   - netcdf-fortran ^netcdf-c +mpi  ^hdf5 +mpi
   - python@3.11
   - py-numpy
-  - doxygen@1.9.7
   repos:
   - $env/custom_repo
