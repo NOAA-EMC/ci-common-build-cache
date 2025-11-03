@@ -108,7 +108,11 @@ jobs:
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -x
+          # Relocate and asynchronously remove /usr/local to
+          #  a) avoid conflicts/CMake find_package misfires, and
+          #  b) free up disk space
           sudo mv /usr/local /usr/local_mv
+          sudo rm -rf /usr/local_mv &
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
