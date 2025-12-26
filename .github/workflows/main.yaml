@@ -138,8 +138,8 @@ jobs:
             which icc
             spack external find intel-oneapi-compilers-classic
             # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
-            for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake; do
-              spack config add "packages:${pkg}:require:'%gcc@${gccver}'"
+            for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake libiconv; do
+              spack config add "packages:${pkg}:require:'%gcc'"
             done
             COMPILER=intel-oneapi-compilers-classic
           fi
