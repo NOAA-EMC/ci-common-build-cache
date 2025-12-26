@@ -139,7 +139,7 @@ jobs:
             for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake; do
               spack config add "packages:${pkg}:require:'%gcc@${gccver}'"
             done
-            COMPILER=intel-oneapi-compilers-classic@$intelversion
+            COMPILER=${COMPILER/intel/intel-oneapi-compilers-classic}
           fi
           compilerstoallow="'%${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}'"
           if [[ " oneapi intel " =~ " ${{ matrix.config.compiler }} " ]]; then
