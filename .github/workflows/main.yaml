@@ -50,14 +50,14 @@ jobs:
             mpi-version: ":",
           }
         - {
-            compiler: "intel",
+            compiler: "classic",
             compiler-version: "2023.2.1",
             os: "ubuntu-22.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
           }
         - {
-            compiler: "intel",
+            compiler: "classic",
             compiler-version: "2023.2.1",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
@@ -92,9 +92,9 @@ jobs:
 
       - name: "Get Intel"
         uses: NOAA-EMC/ci-install-intel-toolkit@develop
-        if: ${{ matrix.config.compiler == 'intel' || matrix.config.compiler == 'oneapi' }}
+        if: ${{ matrix.config.compiler == 'classic' || matrix.config.compiler == 'oneapi' }}
         with:
-          install-classic: ${{ matrix.config.compiler == 'intel' }}
+          install-classic: ${{ matrix.config.compiler == 'classic' }}
           classic-version: ${{ matrix.config.compiler-version }}
           install-oneapi: ${{ matrix.config.compiler == 'oneapi' }}
           oneapi-version: ${{ matrix.config.compiler-version }}
@@ -133,7 +133,7 @@ jobs:
           if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
-          elif [ ${{ matrix.config.compiler }} == 'intel' ]; then
+          elif [ ${{ matrix.config.compiler }} == 'classic' ]; then
             which icc
             spack external find intel-oneapi-compilers-classic
             # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
@@ -143,7 +143,7 @@ jobs:
             COMPILER=intel-oneapi-compilers-classic
           fi
           compilerstoallow="'%${{ matrix.config.compiler }}'"
-          if [[ " oneapi intel " =~ " ${{ matrix.config.compiler }} " ]]; then
+          if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
           fi
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
