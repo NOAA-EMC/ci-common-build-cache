@@ -90,7 +90,7 @@ jobs:
           ref: a9c879d53e758f67cdbf4cec919425cb2a3a1082
 
       - name: "Get spack-helpers extension"
-        uses: NOAA-EMC/spack-helpers@spack-helpers
+        uses: NOAA-EMC/spack-helpers@develop
 
       - name: "Get Intel"
         uses: NOAA-EMC/ci-install-intel-toolkit@develop
