@@ -133,6 +133,7 @@ jobs:
           if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
+            COMPILER=intel-oneapi-compilers
           elif [ ${{ matrix.config.compiler }} == 'classic' ]; then
             which icc
             spack external find intel-oneapi-compilers-classic
@@ -142,7 +143,7 @@ jobs:
             done
             COMPILER=intel-oneapi-compilers-classic
           fi
-          compilerstoallow="'%${{ matrix.config.compiler }}'"
+          compilerstoallow="'%${COMPILER}'"
           if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
           fi
