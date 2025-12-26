@@ -89,6 +89,9 @@ jobs:
         with:
           ref: a9c879d53e758f67cdbf4cec919425cb2a3a1082
 
+      - name: "Get spack-helpers extension"
+        uses: NOAA-EMC/spack-helpers@develop
+
       - name: "Get Intel"
         uses: NOAA-EMC/ci-install-intel-toolkit@develop
         if: ${{ matrix.config.compiler == 'intel' || matrix.config.compiler == 'oneapi' }}
@@ -145,6 +148,8 @@ jobs:
           if [[ " oneapi intel " =~ " ${{ matrix.config.compiler }} " ]]; then
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
           fi
+          allowedcompilerspecs=$(echo $compilerstoallow | sed 's:%::g;s:,: :')
+          spack filter-compilers $allowedcompilerspecs --keep-only
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           spack config add "packages:all:prefer:['%$COMPILER']"
           spack config add "packages:all:require:'target=x86_64'"
@@ -159,9 +164,11 @@ jobs:
           cat spack.yaml
           # Build-n-cache:
           spack concretize --fresh |& tee log.concretize
+          # Validate:
+          spack validate compilers $allowedcompilerspecs
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
           spack config add 'config:build_stage:~/spack'
-          # Don't immediately fail on failed installation so we can still cache whatever was built:
+          # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
           set +e
           spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
           rc=$?
