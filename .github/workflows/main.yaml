@@ -146,8 +146,6 @@ jobs:
           if [[ " oneapi intel " =~ " ${{ matrix.config.compiler }} " ]]; then
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
           fi
-          allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
-          spack filter-compilers $allowedcompilerspecs --keep-only
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           spack config add "packages:all:prefer:['%$COMPILER']"
           spack config add "packages:all:require:'target=x86_64'"
@@ -159,6 +157,8 @@ jobs:
           fi
           # Find GCC:
           spack external find gcc git git-lfs
+          allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
+          spack filter-compilers $allowedcompilerspecs --keep-only
           cat spack.yaml
           # Build-n-cache:
           spack concretize --fresh |& tee log.concretize
