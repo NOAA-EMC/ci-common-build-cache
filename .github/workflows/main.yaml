@@ -150,7 +150,6 @@ jobs:
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           spack config add "packages:all:prefer:['%$COMPILER']"
           spack config add "packages:all:require:'target=x86_64'"
-          spack config add "packages:fortran:require:$COMPILER"
           # MPI setup.
           spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
           if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
@@ -159,6 +158,9 @@ jobs:
           fi
           # Find GCC:
           spack external find gcc git git-lfs
+          for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake libiconv; do
+            spack config add "packages:${pkg}:require:'%gcc@${gccver}'"
+          done
           allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
           spack filter-compilers $allowedcompilerspecs --keep-only
           cat spack.yaml
