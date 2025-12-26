@@ -134,6 +134,7 @@ jobs:
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
             spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
           elif [ ${{ matrix.config.compiler }} == 'intel' ]; then
+            which icc
             spack external find intel-oneapi-compilers-classic
             # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
             for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake; do
