@@ -169,6 +169,9 @@ jobs:
           spack concretize --fresh |& tee log.concretize
           # Validate:
           spack validate compilers $allowedcompilerspecs
+          if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
+            spack allow-pkgs-for-compiler gcc cmake diffutils
+          fi
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
           spack config add 'config:build_stage:~/spack'
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
