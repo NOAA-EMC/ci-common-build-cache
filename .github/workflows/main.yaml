@@ -137,7 +137,7 @@ jobs:
           elif [ ${{ matrix.config.compiler }} == 'classic' ]; then
             which icc
             spack external find intel-oneapi-compilers-classic
-            sed 's|extra_attributes:|extra_attributes:\n          environment:            append_path: {LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin}|' -i spack.yaml
+            sed 's|extra_attributes:|extra_attributes:\n          environment:            append_path:\n            LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin}|' -i spack.yaml
             # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
             for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake libiconv; do
               spack config add "packages:${pkg}:require:'%gcc'"
