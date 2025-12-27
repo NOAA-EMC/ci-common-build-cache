@@ -171,7 +171,7 @@ jobs:
           # Validate:
           spack validate compilers $allowedcompilerspecs
           if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
-            spack allow-pkgs-for-compiler gcc cmake diffutils
+            spack validate allow-pkgs-for-compiler gcc cmake diffutils
           fi
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
           spack config add 'config:build_stage:~/spack'
