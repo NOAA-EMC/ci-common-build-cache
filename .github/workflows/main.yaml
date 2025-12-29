@@ -19,7 +19,7 @@ jobs:
             compiler-version: "13",
             os: "ubuntu-24.04",
             mpi: "mpich",
-            mpi-version: ":","
+            mpi-version: ":",
           }
         - {
             compiler: "gcc",
