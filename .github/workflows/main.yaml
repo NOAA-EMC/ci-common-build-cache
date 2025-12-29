@@ -16,31 +16,10 @@ jobs:
         config:
         - {
             compiler: "gcc",
-            compiler-version: "11",
-            os: "ubuntu-22.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
             compiler-version: "13",
             os: "ubuntu-24.04",
             mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "11",
-            os: "ubuntu-22.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "13",
-            os: "ubuntu-24.04",
-            mpi: "openmpi",
-            mpi-version: ":",
+            mpi-version: ":","
           }
         - {
             compiler: "gcc",
@@ -52,13 +31,6 @@ jobs:
         - {
             compiler: "classic",
             compiler-version: "2023.2.1",
-            os: "ubuntu-22.04",
-            mpi: "intel-oneapi-mpi",
-            mpi-version: "2021.14",
-          }
-        - {
-            compiler: "classic",
-            compiler-version: "2023.2.1",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
@@ -66,13 +38,13 @@ jobs:
         - {
             compiler: "oneapi",
             compiler-version: "2025.0",
-            os: "ubuntu-22.04",
+            os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
           }
         - {
             compiler: "oneapi",
-            compiler-version: "2025.0",
+            compiler-version: "2025.3",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
@@ -114,11 +86,13 @@ jobs:
           #  b) free up disk space
           sudo mv /usr/local /usr/local_mv
           sudo rm -rf /usr/local_mv &
+
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
           COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
-          # Activate environment and set up compilers:
+
+          # Activate environment and set up compilers & MPI
           ln -s main.yaml spack.yaml
           spack env activate .
           spack config add 'config:install_tree:padded_length:200'
@@ -151,14 +125,15 @@ jobs:
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           spack config add "packages:all:prefer:['%$COMPILER']"
           spack config add "packages:all:require:'target=x86_64'"
+          # The following is a problem for CRTM:
           spack config add "packages:fortran:require:['$COMPILER']"
-          # MPI setup.
+          
           spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
           if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
             sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" spack.yaml
             spack config add "packages:mpi:buildable:false"
           fi
-          # Find GCC:
+
           spack external find gcc git git-lfs
           for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake libiconv; do
             spack config add "packages:${pkg}:require:'%gcc'"
@@ -166,19 +141,37 @@ jobs:
           allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
           spack filter-compilers $allowedcompilerspecs --keep-only
           cat spack.yaml
-          # Build-n-cache:
+
+          # Concretize environment
           spack concretize --fresh |& tee log.concretize
-          # Validate:
+
+          # Validate
           spack validate compilers $allowedcompilerspecs
           if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
             spack validate allow-pkgs-for-compiler gcc cmake diffutils
           fi
+
+          # If running from the cron trigger, rebuild from scratch
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
           spack config add 'config:build_stage:~/spack'
+
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
           set +e
           spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
           rc=$?
           set -e
+
+          # Push to buildcache under GitHub Packages (OCI repo)
           spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
           return $rc
+
+          # Generate container image with UFS Weather Model dependencies
+          label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
+          label=${label//:/x}
+          spack mirror add \
+            --oci-username-variable OCI_USERNAME \
+            --oci-password-variable OCI_TOKEN \
+            ufs-weather-model-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/ufs-weather-model-${label}
+          image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
+          spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
+            --base-image ${image} --tag latest ufs-weather-model-env
