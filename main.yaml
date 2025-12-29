@@ -3,6 +3,7 @@ spack:
   concretizer:
     unify: when_possible
   specs:
+  - ufs-weather-model # see whether our dependencies can actually build UWM
 # Various NCEPLIBS dependencies:
   - bacio
   - g2c
