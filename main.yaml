@@ -31,3 +31,5 @@ spack:
   packages:
     jasper:
       require: +jpeg
+    python:
+      require: '@3.12'
