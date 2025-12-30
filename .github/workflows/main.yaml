@@ -57,7 +57,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: "Get Spack"
-        uses: spack/setup-spack@v2.1.1
+        uses: AlexanderRichert-NOAA/setup-spack@customize-pkgs-repo
+        with:
+          builtin-repository: AlexanderRichert-NOAA/spack-packages
+          builtin-ref: dec25-fixes
 
       - name: "Get spack-helpers extension"
         uses: NOAA-EMC/spack-helpers@develop
