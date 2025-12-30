@@ -40,4 +40,4 @@ spack:
     hdf5:
       require: '+hl +fortran +mpi +threadsafe ~szip'
     netcdf-c:
-      require: '+dap +mpi ~parallel-netcdf ~szip +parallel_tests build_system=cmake'
+      require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
