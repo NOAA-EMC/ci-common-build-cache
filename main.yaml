@@ -37,7 +37,5 @@ spack:
       require: '~xerces ~pnetcdf +shared +external-parallelio'
     mapl:
       require: '~pflogger ~fargparse ~extdata2g'
-    hdf5:
-      require: '+hl +fortran +mpi +threadsafe ~szip'
     netcdf-c:
       require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
