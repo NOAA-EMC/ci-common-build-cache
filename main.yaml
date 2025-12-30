@@ -3,7 +3,7 @@ spack:
   concretizer:
     unify: when_possible
   specs:
-  - ufs-weather-model app=S2SWA ^mapl@2.53.4 ^esmf@8.8.0 # see whether our dependencies can actually build UWM
+  - ufs-weather-model app=S2SWA ^mapl@2.53.4 ^esmf@8.8.0 ^parallelio@2.6.2 # see whether our dependencies can actually build UWM
 ## Various NCEPLIBS dependencies:
 #  - bacio
 #  - g2c
