@@ -39,3 +39,7 @@ spack:
       require: '~pflogger ~fargparse ~extdata2g'
     netcdf-c:
       require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
+    cmake:
+      require:
+      - any_of: ['@3.29']
+        when: '%intel'
