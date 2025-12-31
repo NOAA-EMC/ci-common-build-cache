@@ -71,7 +71,14 @@ jobs:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -x
+          if [ ${{ runner.debug }} == 1 ]; then set -x; fi
+          
+          # Wrap spack command to echo before executing
+          spack() {
+            echo "Running: spack $@"
+            command spack "$@"
+          }
+          
           # Relocate and asynchronously remove /usr/local to
           #  a) avoid conflicts/CMake find_package misfires, and
           #  b) free up disk space
@@ -162,7 +169,6 @@ jobs:
             spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
             app_rc=$?
             set -e
-            if [ $app_rc -ne 0 ]; then rc=$app_rc; fi
 
             # Push to buildcache under GitHub Packages (OCI repo)
             spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
@@ -175,8 +181,11 @@ jobs:
               --oci-password-variable OCI_TOKEN \
               ${app}-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}
             image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
+            echo "Creating consolidated container image ${image}"
             spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
               --base-image ${image} --tag latest ${app}-env |& perl -pe 's|.+?Fetching http|::debug::\0'
+
+            if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
 
             # Deactivate environment and clean up for next iteration
             spack env deactivate
@@ -184,5 +193,3 @@ jobs:
             
             echo "::endgroup::"
           done
-          
-          return ${rc:-0}
