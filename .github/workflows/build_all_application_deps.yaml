@@ -31,7 +31,7 @@ jobs:
           }
         - {
             compiler: "oneapi",
-            compiler-version: "2025.3.1",
+            compiler-version: "2025.3",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
