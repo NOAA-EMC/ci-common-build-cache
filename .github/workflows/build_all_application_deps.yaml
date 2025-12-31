@@ -22,20 +22,12 @@ jobs:
             applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model", "gsi"],
           }
         - {
-            compiler: "gcc",
-            compiler-version: "14",
-            os: "ubuntu-24.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-            applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model", "gsi"],
-          }
-        - {
             compiler: "classic",
             compiler-version: "2023.2.1",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
-            applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model", "gsi"],
+            applications: ["nceplibs-develop", "nceplibs-numbered"],
           }
         - {
             compiler: "oneapi",
@@ -43,7 +35,7 @@ jobs:
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
-            applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model", "gsi"],
+            applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model"],
           }
     runs-on: ${{ matrix.config.os }}
     permissions:
@@ -119,23 +111,23 @@ jobs:
           # Loop through each application
           for app in ${{ join(matrix.config.applications, ' ') }}; do
             echo "Processing application: ${app}"
-            
-            # Activate environment and set up application-specific configs
-            ln -s applications/${app}.yaml spack.yaml
-            spack env activate .
+
+            # Create and activate environment from manifest
+            spack env create ${app}-env applications/${app}.yaml
+            spack env activate ${app}-env
             spack config add 'config:install_tree:padded_length:200'
-            
+
             # Add Intel classic compiler LD_LIBRARY_PATH if needed
             if [ ${{ matrix.config.compiler }} == 'classic' ]; then
               sed 's|extra_attributes:|extra_attributes:\n          environment:\n            append_path:\n              LD_LIBRARY_PATH: '"${CLASSIC_LD_PATH}"'|' -i spack.yaml
             fi
-            
+
             spack config add "concretizer:reuse:include:[${compilerstoallow}]"
             spack config add "packages:all:prefer:['%$COMPILER']"
             spack config add "packages:all:require:'target=x86_64'"
             # The following is a problem for CRTM:
             spack config add "packages:fortran:require:['$COMPILER']"
-            
+
             spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
             if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
               sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" spack.yaml
@@ -172,7 +164,7 @@ jobs:
 
             # Push to buildcache under GitHub Packages (OCI repo)
             spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
-            
+
             # Generate container image for this application
             label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
             label=${label//:/x}
@@ -183,10 +175,10 @@ jobs:
             image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
             spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
               --base-image ${image} --tag latest ${app}-env
-            
+
             # Deactivate environment and clean up for next iteration
             spack env deactivate
-            rm spack.yaml
+            spack env rm -y ${app}-env
           done
           
           return ${rc:-0}
