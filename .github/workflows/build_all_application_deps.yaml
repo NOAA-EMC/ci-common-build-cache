@@ -2,8 +2,7 @@ name: common-build-cache
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main, build-by-app]
 # Do a full rebuild from scratch midnight UTC Saturday:
   schedule:
     - cron: '0 0 * * SAT'
