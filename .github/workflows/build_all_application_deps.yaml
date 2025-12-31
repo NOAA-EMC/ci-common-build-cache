@@ -121,7 +121,7 @@ jobs:
 
             # Add Intel classic compiler LD_LIBRARY_PATH if needed
             if [ ${{ matrix.config.compiler }} == 'classic' ]; then
-              sed 's|extra_attributes:|extra_attributes:\n          environment:\n            append_path:\n              LD_LIBRARY_PATH: '"${CLASSIC_LD_PATH}"'|' -i spack.yaml
+              sed 's|extra_attributes:|extra_attributes:\n          environment:\n            append_path:\n              LD_LIBRARY_PATH: '"${CLASSIC_LD_PATH}"'|' -i $SPACK_ENV/spack.yaml
             fi
 
             spack config add "concretizer:reuse:include:[${compilerstoallow}]"
@@ -132,7 +132,7 @@ jobs:
 
             spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
             if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
-              sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" spack.yaml
+              sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" $SPACK_ENV/spack.yaml
               spack config add "packages:mpi:buildable:false"
             fi
 
@@ -142,7 +142,7 @@ jobs:
               spack config add "packages:${pkg}:require:'%gcc'"
             done
             spack filter-compilers $allowedcompilerspecs --keep-only
-            cat spack.yaml
+            cat $SPACK_ENV/spack.yaml
 
             # Concretize environment
             spack concretize --fresh |& tee log.concretize.${app}
