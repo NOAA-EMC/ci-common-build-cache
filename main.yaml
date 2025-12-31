@@ -43,3 +43,7 @@ spack:
       require:
       - any_of: ['@3.29']
         when: '%intel'
+    hdf5:
+      require:
+      - any_of: ['+threadsafe']
+        when: '%intel'
