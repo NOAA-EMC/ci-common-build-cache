@@ -12,6 +12,25 @@ spack:
   - libpng
   - openblas
   - zlib-ng
-  - netcdf-fortran ^netcdf-c +mpi  ^hdf5 +mpi
+  - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
   - python@3.11
   - py-numpy
+  packages:
+    jasper:
+      require: +jpeg
+    python:
+      require: '@3.12'
+    esmf:
+      require: '~xerces ~pnetcdf +shared +external-parallelio'
+    mapl:
+      require: '~pflogger ~fargparse ~extdata2g'
+    netcdf-c:
+      require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
+    cmake:
+      require:
+      - any_of: ['@3.29']
+        when: '%intel'
+    hdf5:
+      require:
+      - any_of: ['+threadsafe']
+        when: '%intel'
