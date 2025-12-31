@@ -110,6 +110,7 @@ jobs:
 
           # Loop through each application
           for app in ${{ join(matrix.config.applications, ' ') }}; do
+            echo "::group::📦 Building application: ${app}"
             echo "Processing application: ${app}"
 
             # Create and activate environment from manifest
@@ -174,11 +175,13 @@ jobs:
               ${app}-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}
             image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
             spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
-              --base-image ${image} --tag latest ${app}-env
+              --base-image ${image} --tag latest ${app}-env |& perl -pe 's|.+?Fetching http|::debug::\0'
 
             # Deactivate environment and clean up for next iteration
             spack env deactivate
             spack env rm -y ${app}-env
+            
+            echo "::endgroup::"
           done
           
           return ${rc:-0}
