@@ -120,8 +120,6 @@ jobs:
               spack external find intel-oneapi-compilers-classic
               COMPILER=intel-oneapi-compilers-classic
               CLASSIC_LD_PATH='/opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin'
-              # Add Intel classic compiler LD_LIBRARY_PATH
-              sed 's|extra_attributes:|extra_attributes:\n          environment:\n            append_path:\n              LD_LIBRARY_PATH: '"${CLASSIC_LD_PATH}"'|' -i $SPACK_ENV/spack.yaml
             fi
             compilerstoallow="'%${COMPILER}'"
             if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
@@ -183,7 +181,7 @@ jobs:
             image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
             echo "Creating consolidated container image ${image}"
             spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
-              --base-image ${image} --tag latest ${app}-env |& perl -pe 's|.+Fetching|::debug::\0|'
+              --base-image ${image} --tag latest ${app}-env |& perl -pe 's|.+(Fetching|Using cached)|::debug::\0|'
 
             if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
 
