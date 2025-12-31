@@ -19,7 +19,7 @@ jobs:
             os: "ubuntu-24.04",
             mpi: "mpich",
             mpi-version: ":",
-            applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model", "gsi"],
+            applications: ["ufs-weather-model", "gsi", "nceplibs-develop", "nceplibs-numbered"],
           }
         - {
             compiler: "classic",
@@ -35,7 +35,7 @@ jobs:
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
-            applications: ["nceplibs-develop", "nceplibs-numbered", "ufs-weather-model"],
+            applications: ["ufs-weather-model", "nceplibs-develop", "nceplibs-numbered"],
           }
     runs-on: ${{ matrix.config.os }}
     permissions:
@@ -88,32 +88,6 @@ jobs:
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
-          COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
-
-          # Set up compilers & MPI (done once for all applications)
-          if [ ${{ matrix.config.compiler }} == 'gcc' ]; then
-            sudo apt install gcc-${{ matrix.config.compiler-version }} g++-${{ matrix.config.compiler-version }} gfortran-${{ matrix.config.compiler-version }}
-            spack config add "packages:gcc-runtime:require:'%gcc@${{ matrix.config.compiler-version }}'"
-          else # set GCC backend for Intel to be the Ubuntu default version of GCC
-            if [ ${{ matrix.config.os }} == ubuntu-22.04 ]; then gccver=11; fi
-            if [ ${{ matrix.config.os }} == ubuntu-24.04 ]; then gccver=13; fi
-            spack config add "packages:gcc-runtime:require:'%gcc@${gccver}'"
-          fi
-          if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
-            spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
-            spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
-            COMPILER=intel-oneapi-compilers
-          elif [ ${{ matrix.config.compiler }} == 'classic' ]; then
-            which icc
-            spack external find intel-oneapi-compilers-classic
-            COMPILER=intel-oneapi-compilers-classic
-            CLASSIC_LD_PATH='/opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin'
-          fi
-          compilerstoallow="'%${COMPILER}'"
-          if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
-            compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
-          fi
-          allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
 
           # Loop through each application
           for app in ${{ join(matrix.config.applications, ' ') }}; do
@@ -126,10 +100,33 @@ jobs:
             spack config add 'config:install_tree:padded_length:200'
             spack repo add ${GITHUB_WORKSPACE}/custom_repo
 
-            # Add Intel classic compiler LD_LIBRARY_PATH if needed
-            if [ ${{ matrix.config.compiler }} == 'classic' ]; then
+            # Set up compilers & MPI for this application
+            COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
+            if [ ${{ matrix.config.compiler }} == 'gcc' ]; then
+              sudo apt install gcc-${{ matrix.config.compiler-version }} g++-${{ matrix.config.compiler-version }} gfortran-${{ matrix.config.compiler-version }}
+              spack config add "packages:gcc-runtime:require:'%gcc@${{ matrix.config.compiler-version }}'"
+            else # set GCC backend for Intel to be the Ubuntu default version of GCC
+              if [ ${{ matrix.config.os }} == ubuntu-22.04 ]; then gccver=11; fi
+              if [ ${{ matrix.config.os }} == ubuntu-24.04 ]; then gccver=13; fi
+              spack config add "packages:gcc-runtime:require:'%gcc@${gccver}'"
+            fi
+            if [ ${{ matrix.config.compiler }} == 'oneapi' ]; then
+              spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}
+              spack compiler find /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux
+              COMPILER=intel-oneapi-compilers
+            elif [ ${{ matrix.config.compiler }} == 'classic' ]; then
+              which icc
+              spack external find intel-oneapi-compilers-classic
+              COMPILER=intel-oneapi-compilers-classic
+              CLASSIC_LD_PATH='/opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin'
+              # Add Intel classic compiler LD_LIBRARY_PATH
               sed 's|extra_attributes:|extra_attributes:\n          environment:\n            append_path:\n              LD_LIBRARY_PATH: '"${CLASSIC_LD_PATH}"'|' -i $SPACK_ENV/spack.yaml
             fi
+            compilerstoallow="'%${COMPILER}'"
+            if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
+              compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
+            fi
+            allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
 
             spack config add "concretizer:reuse:include:[${compilerstoallow}]"
             spack config add "packages:all:prefer:['%$COMPILER']"
@@ -183,7 +180,7 @@ jobs:
             image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
             echo "Creating consolidated container image ${image}"
             spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
-              --base-image ${image} --tag latest ${app}-env |& perl -pe 's|.+?Fetching http|::debug::\0'
+              --base-image ${image} --tag latest ${app}-env |& perl -pe 's|.+?Fetching http|::debug::\0|'
 
             if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
 
