@@ -13,13 +13,12 @@ spack:
   - openblas
   - zlib-ng
   - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
-  - python@3.11
   - py-numpy
   packages:
     jasper:
       require: +jpeg
     python:
-      require: '@3.12'
+      require: '@3.11'
     esmf:
       require: '~xerces ~pnetcdf +shared +external-parallelio'
     mapl:
