@@ -110,13 +110,14 @@ jobs:
 
           # Loop through each application
           for app in ${{ join(matrix.config.applications, ' ') }}; do
-            echo "::group::📦 Building application: ${app}"
+            echo "::group:: Building application dependencies: ${app}"
             echo "Processing application: ${app}"
 
             # Create and activate environment from manifest
             spack env create ${app}-env applications/${app}.yaml
             spack env activate ${app}-env
             spack config add 'config:install_tree:padded_length:200'
+            spack repo add ${GITHUB_WORKSPACE}/custom_repo
 
             # Add Intel classic compiler LD_LIBRARY_PATH if needed
             if [ ${{ matrix.config.compiler }} == 'classic' ]; then

@@ -15,5 +15,3 @@ spack:
   - netcdf-fortran ^netcdf-c +mpi  ^hdf5 +mpi
   - python@3.11
   - py-numpy
-  repos:
-  - $env/custom_repo
