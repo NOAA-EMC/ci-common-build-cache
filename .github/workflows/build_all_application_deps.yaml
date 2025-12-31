@@ -71,12 +71,13 @@ jobs:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ ${{ runner.debug }} == 1 ]; then set -x; fi
+          if [ "${{ runner.debug }}" == 1 ]; then set -x; fi
           
           # Wrap spack command to echo before executing
           spack() {
             echo "Running: spack $@"
-            command spack "$@"
+            _spack_shell_wrapper "$@";
+            return $?
           }
           
           # Relocate and asynchronously remove /usr/local to
