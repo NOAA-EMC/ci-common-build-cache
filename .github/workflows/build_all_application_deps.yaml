@@ -31,7 +31,7 @@ jobs:
           }
         - {
             compiler: "oneapi",
-            compiler-version: "2025.2",
+            compiler-version: "2025.3.1",
             os: "ubuntu-24.04",
             mpi: "intel-oneapi-mpi",
             mpi-version: "2021.14",
@@ -125,6 +125,8 @@ jobs:
             compilerstoallow="'%${COMPILER}'"
             if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
               compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
+              # Fix libimf.so not found issue AND 2025.3.x mismatch issue
+              spack fix-intel-config --consolidate
             fi
             allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
 
