@@ -164,7 +164,7 @@ jobs:
             ${app}-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
           echo "Creating consolidated container image for ${app}"
-          spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
+          spack buildcache push --with-build-dependencies --update-index --unsigned \
             --base-image ${image} --tag latest ${app}-env |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
