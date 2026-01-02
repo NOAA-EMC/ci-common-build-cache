@@ -82,6 +82,7 @@ jobs:
           # Create and activate environment from manifest
           spack env create ${app}-env applications/${app}.yaml
           spack env activate ${app}-env
+          cd $SPACK_ENV # need for 'containerize'
           spack config add 'config:install_tree:padded_length:200'
           spack repo add ${GITHUB_WORKSPACE}/custom_repo
 
@@ -168,20 +169,28 @@ jobs:
               images:
                 os: ${image}
                 spack: develop
+            view: true
           EOF
           
+          # Copy environment files and custom_repo to build context
+          build_context="${GITHUB_WORKSPACE}/container-build-${app}"
+          mkdir -p "$build_context"
+          cp $SPACK_ENV/spack.yaml "$build_context/"
+          cp $SPACK_ENV/spack.lock "$build_context/"
+          cp -r ${GITHUB_WORKSPACE}/custom_repo "$build_context/"
+          
           # Generate Dockerfile using spack containerize
-          cd $SPACK_ENV
-          $(which spack) containerize > Dockerfile.${app}
+          cd "$build_context"
+          $(which spack) containerize > Dockerfile
           
           # Modify Dockerfile to:
           # 1. Copy in spack.lock and custom_repo
           # 2. Use --cache-only --only-concrete --no-check-signature flags for spack install
-          sed -i '/COPY .*spack.yaml/a COPY spack.lock /opt/spack-environment/spack.lock\nCOPY custom_repo /opt/spack-environment/custom_repo' Dockerfile.${app}
-          sed -i 's/spack install /spack install --cache-only --no-check-signature --only-concrete /' Dockerfile.${app}
+          sed -i '/COPY .*spack.yaml/a COPY spack.lock /opt/spack-environment/spack.lock\nCOPY custom_repo /opt/spack-environment/custom_repo' Dockerfile
+          sed -i 's/spack install /spack install --cache-only --no-check-signature --only-concrete /' Dockerfile
           
           # Build and push the container image
-          docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest -f Dockerfile.${app} .
+          docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest .
           echo ${OCI_TOKEN} | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
           docker push ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest
 
