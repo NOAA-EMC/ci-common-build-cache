@@ -164,7 +164,7 @@ jobs:
           # Create view at /usr/local (matching the container path) so RPATHs are correct
           sudo mkdir -p /usr/local
           spack env view enable
-          sudo -E spack env view regenerate /usr/local
+          sudo -E $(which spack) env view regenerate /usr/local
           
           # Create Dockerfile that copies /usr/local with correct paths
           cat > Dockerfile.${app} <<EOF
