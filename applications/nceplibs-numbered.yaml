@@ -14,6 +14,8 @@ spack:
   - zlib-ng
   - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
   - py-numpy
+  - ip-test-files
+  - bufr-test-files
   packages:
     jasper:
       require: +jpeg
