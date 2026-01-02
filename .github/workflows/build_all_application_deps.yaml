@@ -166,7 +166,7 @@ jobs:
           echo "Creating consolidated container image for ${app}"
           
           # Temporarily enable view at /usr/local for container image
-          spack config add 'view:default:root:/usr/local'
+          spack config add 'view:/usr/local'
           
           spack buildcache push --with-build-dependencies --update-index --unsigned \
             --base-image ${image} --tag latest ${app}-env |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
