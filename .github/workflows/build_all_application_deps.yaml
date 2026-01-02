@@ -163,13 +163,13 @@ jobs:
           echo "Creating consolidated container image for ${app} with unified view"
           
           # Add container and view configuration to spack.yaml
+          spack config add "view:true"
           cat >> $SPACK_ENV/spack.yaml <<EOF
             container:
               format: docker
               images:
                 os: ${image}
                 spack: develop
-            view: true
           EOF
           
           # Copy environment files and custom_repo to build context
