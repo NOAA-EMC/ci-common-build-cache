@@ -172,7 +172,7 @@ jobs:
           
           # Generate Dockerfile using spack containerize
           cd $SPACK_ENV
-          spack containerize > Dockerfile.${app}
+          $(which spack) containerize > Dockerfile.${app}
           
           # Modify Dockerfile to use --cache-only flag for spack install
           sed -i 's/spack install /spack install --cache-only --no-check-signature /' Dockerfile.${app}
