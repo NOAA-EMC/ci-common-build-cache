@@ -170,6 +170,8 @@ jobs:
               images:
                 os: ${image}
                 spack: develop
+            mirrors:
+              emc-common-build-cache: oci://ghcr.io/${OCI_USERNAME}/ci-common-build-cache
           EOF
           
           # Copy environment files and custom_repo to build context
