@@ -25,6 +25,7 @@ COPY custom_repo custom_repo
 # Install the software, remove unnecessary deps
 RUN cd {{ paths.environment }}
 RUN spack env activate .
+RUN spack repo add '$env/custom_repo'
 RUN spack install --cache only --no-check-signature --fail-fast
 RUN spack gc -y
 
