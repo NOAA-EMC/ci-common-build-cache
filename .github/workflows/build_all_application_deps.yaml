@@ -155,11 +155,11 @@ jobs:
           # Push individual packages to GitHub Packages build cache (OCI repo)
           spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
-          # Generate container image for this application with view at /usr/local
+          # Generate container image for this application with view
           label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
           label=${label//:/x}
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
-          echo "Creating consolidated container image for ${app} with unified view at /usr/local"
+          echo "Creating consolidated container image for ${app} with unified view"
           
           # Add container and view configuration to spack.yaml
           cat >> $SPACK_ENV/spack.yaml <<EOF
@@ -169,10 +169,9 @@ jobs:
                 os: ${image}
                 spack: develop
           EOF
-          spack config add 'view:/usr/local'
           
           # Generate Dockerfile using spack containerize
-          spack containerize --format docker > Dockerfile.${app}
+          spack containerize > Dockerfile.${app}
           
           # Modify Dockerfile to use --cache-only flag for spack install
           sed -i 's/spack install /spack install --cache-only --no-check-signature /' Dockerfile.${app}
