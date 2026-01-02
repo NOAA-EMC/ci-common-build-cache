@@ -163,7 +163,8 @@ jobs:
           
           # Create view at /usr/local (matching the container path) so RPATHs are correct
           sudo mkdir -p /usr/local
-          sudo chown runner /usr/local
+          sudo chown runner /usr/local -R
+          sudo chmod ugo+rwX /usr/local -R
           spack env view enable /usr/local
           spack env view regenerate /usr/local
           
