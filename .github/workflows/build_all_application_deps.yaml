@@ -169,14 +169,10 @@ jobs:
           # Create Dockerfile that copies /usr/local with correct paths
           cat > Dockerfile.${app} <<EOF
           FROM ${image}
-          COPY usr_local/ /usr/local/
+          COPY /usr/local/ /usr/local/
           ENV PATH=/usr/local/bin:\$PATH
           ENV LD_LIBRARY_PATH=/usr/local/lib:\$LD_LIBRARY_PATH
           EOF
-          
-          # Copy /usr/local to build context
-          sudo cp -a /usr/local ${GITHUB_WORKSPACE}/usr_local
-          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/usr_local
           
           # Build and push the container image
           docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest -f Dockerfile.${app} .
