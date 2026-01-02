@@ -162,6 +162,7 @@ jobs:
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
           echo "Creating consolidated container image for ${app} with unified view"
           
+          spack config add 'config:template_dirs:${GITHUB_WORKSPACE}/templates/container/'
           # Add container and view configuration to spack.yaml
           spack config add "view:true"
           cat >> $SPACK_ENV/spack.yaml <<EOF
@@ -189,7 +190,6 @@ jobs:
           # 1. Copy in spack.lock and custom_repo
           # 2. Use --cache-only --only-concrete --no-check-signature flags for spack install
           sed -i '/COPY .*spack.yaml/a COPY spack.lock /opt/spack-environment/spack.lock\nCOPY custom_repo /opt/spack-environment/custom_repo' Dockerfile
-          sed -i 's/spack install /spack install --cache-only --no-check-signature --only-concrete /' Dockerfile
           
           # Build and push the container image
           docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest .
