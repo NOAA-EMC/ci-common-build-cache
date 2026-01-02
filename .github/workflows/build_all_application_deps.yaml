@@ -171,6 +171,7 @@ jobs:
           EOF
           
           # Generate Dockerfile using spack containerize
+          cd $SPACK_ENV
           spack containerize > Dockerfile.${app}
           
           # Modify Dockerfile to use --cache-only flag for spack install
