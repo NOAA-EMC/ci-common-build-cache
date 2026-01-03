@@ -176,6 +176,8 @@ jobs:
             mirrors:
               emc-common-build-cache: oci://ghcr.io/${OCI_USERNAME}/ci-common-build-cache
           EOF
+
+          spack config blame
           
           # Copy environment files and custom_repo to build context
           build_context="${GITHUB_WORKSPACE}/container-build-${app}"
