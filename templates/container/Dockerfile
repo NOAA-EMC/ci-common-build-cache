@@ -19,15 +19,13 @@ RUN {% if os_package_update %}{{ os_packages_build.update }} \
 RUN mkdir -p {{ paths.environment }} && \
 set -o noclobber \
 {{ manifest }} > {{ paths.environment }}/spack.yaml
-COPY spack.lock spack.lock
-COPY custom_repo custom_repo
+COPY spack.lock {{ paths.environment }}/spack.lock
+COPY custom_repo {{ paths.environment }}/custom_repo
 
 # Install the software, remove unnecessary deps
-RUN cd {{ paths.environment }}
-RUN spack env activate .
-RUN spack repo add '$env/custom_repo'
-RUN spack install --cache only --no-check-signature --fail-fast
-RUN spack gc -y
+RUN spack --env {{ paths.environment }} repo add '$env/custom_repo'
+RUN spack --env {{ paths.environment }} install --cache only --no-check-signature --fail-fast
+RUN spack --env {{ paths.environment }} gc -y
 
 {% if strip %}
 # Strip all the binaries
