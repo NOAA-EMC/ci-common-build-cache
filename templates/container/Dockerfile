@@ -23,7 +23,6 @@ COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 
 # Install the software, remove unnecessary deps
-RUN spack --env {{ paths.environment }} repo add '$env/custom_repo'
 RUN spack --env {{ paths.environment }} install --cache only --no-check-signature --fail-fast
 RUN spack --env {{ paths.environment }} gc -y
 
