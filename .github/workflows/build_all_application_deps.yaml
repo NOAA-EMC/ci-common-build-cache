@@ -133,7 +133,10 @@ jobs:
             spack config add "packages:${pkg}:require:'%gcc'"
           done
           spack filter-compilers $allowedcompilerspecs --keep-only
+
+          echo "::group:: cat spack.yaml"
           cat $SPACK_ENV/spack.yaml
+          echo "::endgroup::"
 
           # Concretize environment
           spack concretize --fresh |& tee log.concretize.${app}
