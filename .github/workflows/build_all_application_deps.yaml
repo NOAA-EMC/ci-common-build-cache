@@ -178,7 +178,11 @@ jobs:
           EOF
 
           spack config blame
-          
+
+          echo "::group:: Dockerfile contents"
+          cat Dockerfile
+          echo "::endgroup::"
+
           # Copy environment files and custom_repo to build context
           build_context="${GITHUB_WORKSPACE}/container-build-${app}"
           mkdir -p "$build_context"
