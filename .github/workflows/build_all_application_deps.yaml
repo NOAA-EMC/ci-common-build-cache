@@ -183,16 +183,8 @@ jobs:
           EOF
 
           spack config blame
-
-          # Copy environment files and custom_repo to build context
-          build_context="${GITHUB_WORKSPACE}/container-build-${app}"
-          mkdir -p "$build_context"
-          cp $SPACK_ENV/spack.yaml "$build_context/"
-          cp $SPACK_ENV/spack.lock "$build_context/"
-          cp -r ${GITHUB_WORKSPACE}/custom_repo "$build_context/"
           
-          # Generate Dockerfile using spack containerize
-          cd "$build_context"
+          # Generate Dockerfile using spack containerize (already in $SPACK_ENV from earlier cd)
           $(which spack) containerize > Dockerfile
 
           echo "::group:: Dockerfile contents"
@@ -200,8 +192,12 @@ jobs:
           echo "::endgroup::"
 
           # Build and push the container image
+          echo "::group:: Docker build"
           docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest .
+          echo "::endgroup::"
           echo ${OCI_TOKEN} | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
+          echo "::group:: Docker push"
           docker push ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest
+          echo "::endgroup::"
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
