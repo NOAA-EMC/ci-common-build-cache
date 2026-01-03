@@ -20,4 +20,4 @@ class IpTestFiles(Package):
     )
 
     def install(self, spec, prefix):
-        install(self.stage.archive_file, join_path(prefix, "share"))
+        install(self.stage.archive_file, prefix)

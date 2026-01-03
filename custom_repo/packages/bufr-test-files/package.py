@@ -21,4 +21,4 @@ class BufrTestFiles(Package):
     )
 
     def install(self, spec, prefix):
-        install_tree(".", join_path(prefix, "share"))
+        install_tree(".", prefix)
