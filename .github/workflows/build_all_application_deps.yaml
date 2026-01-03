@@ -163,7 +163,7 @@ jobs:
           echo "Creating consolidated container image for ${app} with unified view"
           
           spack config remove 'config:template_dirs'
-          spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/container/]"
+          spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
           spack repo remove custom_repo
           # Add container and view configuration to spack.yaml
           spack config add "view:true"
