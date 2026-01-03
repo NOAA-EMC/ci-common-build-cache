@@ -179,10 +179,6 @@ jobs:
 
           spack config blame
 
-          echo "::group:: Dockerfile contents"
-          cat Dockerfile
-          echo "::endgroup::"
-
           # Copy environment files and custom_repo to build context
           build_context="${GITHUB_WORKSPACE}/container-build-${app}"
           mkdir -p "$build_context"
@@ -198,7 +194,11 @@ jobs:
           # 1. Copy in spack.lock and custom_repo
           # 2. Use --cache-only --only-concrete --no-check-signature flags for spack install
           sed -i '/COPY .*spack.yaml/a COPY spack.lock /opt/spack-environment/spack.lock\nCOPY custom_repo /opt/spack-environment/custom_repo' Dockerfile
-          
+
+          echo "::group:: Dockerfile contents"
+          cat Dockerfile
+          echo "::endgroup::"
+
           # Build and push the container image
           docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest .
           echo ${OCI_TOKEN} | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
