@@ -164,6 +164,7 @@ jobs:
           
           spack config remove 'config:template_dirs'
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
+          rm $SPACK_ROOT/share/spack/templates -rf
           spack repo remove custom_repo
           # Add container and view configuration to spack.yaml
           spack config add "view:true"
