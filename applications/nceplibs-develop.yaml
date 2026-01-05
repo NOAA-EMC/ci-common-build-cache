@@ -1,0 +1,37 @@
+spack:
+  view: false
+  concretizer:
+    unify: true
+  specs:
+  - bacio@develop
+  - g2@develop +g2c_compare
+  - g2c@develop +utils +build_v2_api
+  - ip@develop precision=4,d,8
+  - w3emc@develop precision=4,d,8
+  - jasper +jpeg
+  - libpng
+  - openblas
+  - zlib-ng
+  - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
+  - py-numpy
+  - ip-test-files
+  - bufr-test-files
+  packages:
+    jasper:
+      require: +jpeg
+    python:
+      require: '@3.11'
+    esmf:
+      require: '~xerces ~pnetcdf +shared +external-parallelio'
+    mapl:
+      require: '~pflogger ~fargparse ~extdata2g'
+    netcdf-c:
+      require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
+    cmake:
+      require:
+      - any_of: ['@3.29']
+        when: '%intel'
+    hdf5:
+      require:
+      - any_of: ['+threadsafe']
+        when: '%intel'

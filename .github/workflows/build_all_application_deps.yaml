@@ -2,8 +2,7 @@ name: common-build-cache
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main, build-by-app]
 # Do a full rebuild from scratch midnight UTC Saturday:
   schedule:
     - cron: '0 0 * * SAT'
@@ -13,42 +12,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        application: [ufs-weather-model, gsi, nceplibs-develop, nceplibs-numbered]
         config:
-        - {
-            compiler: "gcc",
-            compiler-version: "13",
-            os: "ubuntu-24.04",
-            mpi: "mpich",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "gcc",
-            compiler-version: "14",
-            os: "ubuntu-24.04",
-            mpi: "openmpi",
-            mpi-version: ":",
-          }
-        - {
-            compiler: "classic",
-            compiler-version: "2023.2.1",
-            os: "ubuntu-24.04",
-            mpi: "intel-oneapi-mpi",
-            mpi-version: "2021.14",
-          }
-        - {
-            compiler: "oneapi",
-            compiler-version: "2025.2",
-            os: "ubuntu-24.04",
-            mpi: "intel-oneapi-mpi",
-            mpi-version: "2021.14",
-          }
-        - {
-            compiler: "oneapi",
-            compiler-version: "2025.2",
-            os: "ubuntu-24.04",
-            mpi: "intel-oneapi-mpi",
-            mpi-version: "2021.14",
-          }
+        - {compiler: gcc, compiler-version: "13", os: ubuntu-24.04, mpi: mpich, mpi-version: ":"}
+        - {compiler: classic, compiler-version: "2023.2.1", os: ubuntu-24.04, mpi: intel-oneapi-mpi, mpi-version: "2021.14"}
+        - {compiler: oneapi, compiler-version: "2025.3", os: ubuntu-24.04, mpi: intel-oneapi-mpi, mpi-version: "2021.14"}
+        exclude:
+        - application: gsi
+          config: {compiler: classic}
+        - application: gsi
+          config: {compiler: oneapi}
     runs-on: ${{ matrix.config.os }}
     permissions:
       packages: write
@@ -83,7 +56,16 @@ jobs:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -x
+          if [ "${{ runner.debug }}" == 1 ]; then set -x; fi
+          
+          # Wrap spack command to echo before executing
+          spack() {
+            echo "::group:: spack $@"
+            _spack_shell_wrapper "$@";
+            echo "::endgroup::"
+            return $?
+          }
+          
           # Relocate and asynchronously remove /usr/local to
           #  a) avoid conflicts/CMake find_package misfires, and
           #  b) free up disk space
@@ -93,12 +75,20 @@ jobs:
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
-          COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
 
-          # Activate environment and set up compilers & MPI
-          ln -s main.yaml spack.yaml
-          spack env activate .
+          app=${{ matrix.application }}
+          echo "Processing application: ${app}"
+
+          # Create and activate environment from manifest
+          spack env create ${app}-env applications/${app}.yaml
+          spack env activate ${app}-env
+          cd $SPACK_ENV # need for 'containerize'
           spack config add 'config:install_tree:padded_length:200'
+          cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
+          spack repo add '$env/custom_repo'
+
+          # Set up compilers & MPI for this application
+          COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
           if [ ${{ matrix.config.compiler }} == 'gcc' ]; then
             sudo apt install gcc-${{ matrix.config.compiler-version }} g++-${{ matrix.config.compiler-version }} gfortran-${{ matrix.config.compiler-version }}
             spack config add "packages:gcc-runtime:require:'%gcc@${{ matrix.config.compiler-version }}'"
@@ -114,39 +104,42 @@ jobs:
           elif [ ${{ matrix.config.compiler }} == 'classic' ]; then
             which icc
             spack external find intel-oneapi-compilers-classic
-            sed 's|extra_attributes:|extra_attributes:\n          environment:\n            append_path:\n              LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin|' -i spack.yaml
-            # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
-            for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake libiconv; do
-              spack config add "packages:${pkg}:require:'%gcc'"
-            done
             COMPILER=intel-oneapi-compilers-classic
+            CLASSIC_LD_PATH='/opt/intel/oneapi/compiler/${{ matrix.config.compiler-version }}/linux/compiler/lib/intel64_lin'
           fi
           compilerstoallow="'%${COMPILER}'"
           if [[ " oneapi classic " =~ " ${{ matrix.config.compiler }} " ]]; then
             compilerstoallow="${compilerstoallow},'%gcc@${gccver}'"
+            # Fix libimf.so not found issue AND 2025.3.x mismatch issue
+            spack fix-intel-config --consolidate
           fi
+          allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
+
           spack config add "concretizer:reuse:include:[${compilerstoallow}]"
           spack config add "packages:all:prefer:['%$COMPILER']"
           spack config add "packages:all:require:'target=x86_64'"
           # The following is a problem for CRTM:
           spack config add "packages:fortran:require:['$COMPILER']"
-          
+
           spack config add "packages:mpi:require:'${{ matrix.config.mpi }}@${{ matrix.config.mpi-version }}'"
           if [ "${{ matrix.config.mpi }}" == intel-oneapi-mpi ]; then
-            sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" spack.yaml
+            sed -i "s|^  packages:|  packages:\n    intel-oneapi-mpi:\n      buildable: false\n      externals:\n      - spec: intel-oneapi-mpi@${{ matrix.config.mpi-version }}\n        prefix: /opt/intel/oneapi|" $SPACK_ENV/spack.yaml
             spack config add "packages:mpi:buildable:false"
           fi
 
           spack external find gcc git git-lfs
+          # Avoid various C++-related Intel compiler bugs by building some packages with GCC:
           for pkg in diffutils sed grep libidn2 tar berkeley-db gettext findutils cmake libiconv; do
             spack config add "packages:${pkg}:require:'%gcc'"
           done
-          allowedcompilerspecs=$(echo $compilerstoallow | sed "s:%::g;s:,: :;s:'::g")
           spack filter-compilers $allowedcompilerspecs --keep-only
-          cat spack.yaml
+
+          echo "::group:: cat spack.yaml"
+          cat $SPACK_ENV/spack.yaml
+          echo "::endgroup::"
 
           # Concretize environment
-          spack concretize --fresh |& tee log.concretize
+          spack concretize --fresh |& tee log.concretize.${app}
 
           # Validate
           spack validate compilers $allowedcompilerspecs
@@ -161,20 +154,50 @@ jobs:
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
           set +e
           spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
-          rc=$?
+          app_rc=$?
           set -e
 
-          # Push to buildcache under GitHub Packages (OCI repo)
-          spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache
-          return $rc
+          # Push individual packages to GitHub Packages build cache (OCI repo)
+          spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
-          # Generate container image with UFS Weather Model dependencies
+          # Generate container image for this application with view
+          echo "Creating consolidated container image for ${app} with unified view"
           label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
           label=${label//:/x}
-          spack mirror add \
-            --oci-username-variable OCI_USERNAME \
-            --oci-password-variable OCI_TOKEN \
-            ufs-weather-model-env oci://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/ufs-weather-model-${label}
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
-          spack buildcache push --only dependencies --with-build-dependencies --update-index --unsigned \
-            --base-image ${image} --tag latest ufs-weather-model-env
+
+          spack config remove 'config:template_dirs'
+          spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
+          rm $SPACK_ROOT/share/spack/templates/container -rf
+          spack repo remove custom_repo
+          # Add container and view configuration to spack.yaml
+          spack config add "view:true"
+          cat >> $SPACK_ENV/spack.yaml <<EOF
+            container:
+              format: docker
+              images:
+                os: ${image}
+                spack: develop
+            mirrors:
+              emc-common-build-cache: oci://ghcr.io/${OCI_USERNAME}/ci-common-build-cache
+          EOF
+
+          spack config blame
+          
+          # Generate Dockerfile using spack containerize (already in $SPACK_ENV from earlier cd)
+          $(which spack) containerize > Dockerfile
+
+          echo "::group:: Dockerfile contents"
+          cat Dockerfile
+          echo "::endgroup::"
+
+          # Build and push the container image
+          echo "::group:: Docker build"
+          docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest .
+          echo "::endgroup::"
+          echo ${OCI_TOKEN} | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
+          echo "::group:: Docker push"
+          docker push ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest
+          echo "::endgroup::"
+
+          if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
