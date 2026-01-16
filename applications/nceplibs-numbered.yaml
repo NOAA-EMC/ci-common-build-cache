@@ -17,6 +17,9 @@ spack:
   - ip-test-files
   - bufr-test-files
   packages:
+    all:
+      require:
+        any_of: ["+shared", "libs=shared", "@:"]
     jasper:
       require: +jpeg
     python:
