@@ -180,7 +180,7 @@ jobs:
                 os: ${image}
                 spack: develop
               os_packages:
-                build:
+                final:
                 - gcc
                 - g++
                 - gfortran
