@@ -2,6 +2,13 @@ spack:
   view: false
   concretizer:
     unify: true
+  container:
+    os_packages:
+      build:
+      - gcc
+      - g++
+      - gfortran
+      - gdb
   specs:
   - bacio@2.6.0
   - g2@3.5.1
