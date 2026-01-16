@@ -2,13 +2,6 @@ spack:
   view: false
   concretizer:
     unify: when_possible
-  container:
-    os_packages:
-      build:
-      - gcc
-      - g++
-      - gfortran
-      - gdb
   specs:
 # GSI (https://github.com/NOAA-EMC/GSI/blob/develop/ci/spack.yaml):
   - netcdf-c@4.9.2 +mpi ~blosc +shared

@@ -2,13 +2,6 @@ spack:
   view: false
   concretizer:
     unify: true
-  container:
-    os_packages:
-      build:
-      - gcc
-      - g++
-      - gfortran
-      - gdb
   specs:
   - ufs-weather-model app=S2SWA
   - mapl@2.54.2 
