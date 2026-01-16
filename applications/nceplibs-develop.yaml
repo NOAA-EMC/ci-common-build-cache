@@ -19,7 +19,7 @@ spack:
   packages:
     all:
       require:
-        any_of: ["+shared", "libs=shared", "@:"]
+        - any_of: ["+shared", "libs=shared", "@:"]
     jasper:
       require: +jpeg
     python:
