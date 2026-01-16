@@ -179,12 +179,6 @@ jobs:
               images:
                 os: ${image}
                 spack: develop
-              os_packages:
-                final:
-                - gcc
-                - g++
-                - gfortran
-                - gdb
             mirrors:
               emc-common-build-cache: oci://ghcr.io/${OCI_USERNAME}/ci-common-build-cache
           EOF
