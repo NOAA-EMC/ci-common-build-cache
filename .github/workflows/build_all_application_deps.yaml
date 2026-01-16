@@ -15,6 +15,7 @@ jobs:
         application: [ufs-weather-model, gsi, nceplibs-develop, nceplibs-numbered]
         config:
         - {compiler: gcc, compiler-version: "13", os: ubuntu-24.04, mpi: mpich, mpi-version: ":"}
+        - {compiler: gcc, compiler-version: "14", os: ubuntu-24.04, mpi: mpich, mpi-version: ":"}
         - {compiler: classic, compiler-version: "2023.2.1", os: ubuntu-24.04, mpi: intel-oneapi-mpi, mpi-version: "2021.14"}
         - {compiler: oneapi, compiler-version: "2025.3", os: ubuntu-24.04, mpi: intel-oneapi-mpi, mpi-version: "2021.14"}
         exclude:
