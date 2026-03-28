@@ -156,7 +156,7 @@ jobs:
           set -e
 
           # Push individual packages to GitHub Packages build cache (OCI repo)
-          spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
+          spack buildcache push --update-index --unsigned --with-build-dependencies --base-image ubuntu:24.04 --tag with-base emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           # Generate container image for this application with view
           echo "Creating consolidated container image for ${app} with unified view"
