@@ -9,6 +9,11 @@ spack:
   - parallelio@2.6.3
   - netcdf-c@4.9.2
   - hdf5@1.14.5
+  - sp@2.3.3
+  - bacio@2.4.1
+  - ip@3.3.3
+  - w3emc@2.12
+  - g2@3.5.1
   packages:
     jasper:
       require: +jpeg
