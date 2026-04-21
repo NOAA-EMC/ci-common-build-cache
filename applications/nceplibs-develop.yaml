@@ -3,6 +3,7 @@ spack:
   concretizer:
     unify: true
   specs:
+  # Dependencies:
   - bacio@develop
   - g2@develop +g2c_compare
   - g2c@develop +utils +build_v2_api
@@ -14,8 +15,13 @@ spack:
   - zlib-ng
   - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
   - py-numpy
+  # Test files:
   - ip-test-files
   - bufr-test-files
+  # Profilers:
+  - scalasca ^scorep ~gcc-plugin
+  - hpctoolkit
+  - hpcviewer
   packages:
     all:
       require:
