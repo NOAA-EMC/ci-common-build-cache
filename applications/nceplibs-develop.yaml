@@ -44,3 +44,5 @@ spack:
       require:
       - any_of: ['+threadsafe']
         when: '%intel'
+    papi:
+      version: [7.2.0]
