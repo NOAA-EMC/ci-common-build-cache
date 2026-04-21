@@ -46,3 +46,5 @@ spack:
         when: '%intel'
     papi:
       require: ['@7.2.0']
+    boost:
+      require: ['@:1.88'] # hpctoolkit fails without deprecated libboost_system.so

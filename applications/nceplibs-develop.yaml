@@ -19,8 +19,8 @@ spack:
   - ip-test-files
   - bufr-test-files
   # Profilers:
-  - scalasca ^scorep ~gcc-plugin
-  - hpctoolkit
+  - scalasca ^scorep +fortran +mpi +mpi_f08 +papi
+  - hpctoolkit +mpi +papi
   - hpcviewer
   packages:
     all:
@@ -46,3 +46,7 @@ spack:
         when: '%intel'
     papi:
       require: ['@7.2.0']
+    scorep:
+      require: ['~gcc-plugin']
+    boost:
+      require: ['@:1.88'] # hpctoolkit fails without deprecated libboost_system.so
