@@ -85,7 +85,10 @@ jobs:
           # Add profilers for nceplibs environments when using GCC
           if [[ "${{ matrix.config.compiler }}" == "gcc" ]] && [[ "${app}" =~ ^nceplibs-(develop|numbered)$ ]]; then
             echo "Adding GCC profilers configuration for ${app}"
+            # Include profiler package configuration
             spack config add "include:[${GITHUB_WORKSPACE}/applications/nceplibs/nceplibs-profilers-gcc.yaml]"
+            # Add profilers
+            spack add scalasca hpctoolkit hpcviewer
           fi
           
           spack config add 'config:install_tree:padded_length:200'

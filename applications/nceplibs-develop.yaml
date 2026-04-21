@@ -12,6 +12,23 @@
 spack:
   include:
     - nceplibs/nceplibs-common.yaml
+  specs:
+  # NCEPLIBS core packages:
+  - bacio@develop
+  - g2@develop +g2c_compare
+  - g2c@develop +utils +build_v2_api
+  - ip@develop precision=4,d,8
+  - w3emc@develop precision=4,d,8
+  # Common dependencies:
+  - jasper +jpeg
+  - libpng
+  - openblas
+  - zlib-ng
+  - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
+  - py-numpy
+  # Test files:
+  - ip-test-files
+  - bufr-test-files
   packages:
     # NCEPLIBS version requirements (develop):
     bacio:

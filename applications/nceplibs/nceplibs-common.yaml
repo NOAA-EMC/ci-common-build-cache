@@ -1,27 +1,11 @@
 # Common configuration for nceplibs environments
 # This file contains shared settings used by both nceplibs-develop.yaml
 # and nceplibs-numbered.yaml
-# NOTE: This file is included via the 'include:' directive, so it should NOT have a top-level 'spack:' key
+# This file is included via the 'include:' directive.
+
 view: false
 concretizer:
   unify: true
-specs:
-# NCEPLIBS core packages:
-- bacio
-- g2
-- g2c
-- ip precision=4,d,8
-- w3emc precision=4,d,8
-# Common dependencies:
-- jasper +jpeg
-- libpng
-- openblas
-- zlib-ng
-- netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
-- py-numpy
-# Test files:
-- ip-test-files
-- bufr-test-files
 packages:
   all:
     require:
@@ -48,3 +32,5 @@ packages:
     require: ['@7.2.0']
   boost:
     require: ['@:1.88'] # hpctoolkit fails without deprecated libboost_system.so
+  scorep:
+    require: ['~gcc-plugin']
