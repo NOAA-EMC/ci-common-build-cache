@@ -6,16 +6,20 @@ This directory contains Spack environment configurations for building nceplibs d
 
 ### Base Configurations (in `nceplibs/` subdirectory)
 
+These files are included via Spack's `include:` directive and do NOT have a top-level `spack:` key.
+
 - **nceplibs/nceplibs-common.yaml** - Common configuration shared by all nceplibs environments
   - Contains shared package requirements and constraints
   - Includes all nceplibs core packages (bacio, g2, g2c, ip, w3emc) with common variants
   - Includes common dependencies (jasper, libpng, openblas, netcdf-fortran, etc.)
   - Includes test files (ip-test-files, bufr-test-files)
+  - Configuration sections (view, concretizer, specs, packages) are merged into parent environments
 
 - **nceplibs/nceplibs-profilers-gcc.yaml** - Profiler tools (GCC compiler only)
   - Contains scalasca, hpctoolkit, and hpcviewer
   - **IMPORTANT**: Only compatible with GCC compiler
   - Should only be included when building with GCC
+  - Adds specs and package requirements for profiler tools
 
 ### Environment Configurations (in `applications/` directory)
 
@@ -92,47 +96,32 @@ spack -e nceplibs config add "include:[applications/nceplibs-profilers-gcc.yaml]
 # Install
 spack -e nceplibs install
 ```
-/nceplibs
+
 ## Configuration Structure
 
 The configuration follows Spack best practices:
 
-1. **Modularity**: Common configuration is factored out into `nceplibs-common.yaml`
+1. **Modularity**: Common configuration is factored out into `nceplibs/nceplibs-common.yaml`
 2. **Reusability**: Both develop and numbered environments share the common base
 3. **Package-based Configuration**: Version and variant differences use the `packages:` section rather than duplicating specs
 4. **Conditional Features**: Compiler-specific features (profilers) are isolated
 5. **Maintainability**: Changes to common settings only need to be made in one place
 
 The architecture uses Spack's configuration composition:
-- **nceplibs-common.yaml** defines the package list in `specs:` with common variants
-- **nceplibs-develop.yaml** and **nceplibs-numbered.yaml** use `packages:` to set version requirements
-- This allows the same package to be included once but configured differently per environment
-
-## Notes
-/nceplibs-common.yaml** defines the package list in `specs:` with common variants
+- **nceplibs/nceplibs-common.yaml** defines the package list in `specs:` with common variants
 - **nceplibs-develop.yaml** and **nceplibs-numbered.yaml** use `packages:` to set version requirements
 - This allows the same package to be included once but configured differently per environment
 - Shared configuration files are organized in the `nceplibs/` subdirectory to separate them from the main environment files used by CI
-- Add version/variant requirements to the `packages:` section in specific environment files
-- Use common variants in the common specs, environment-specific variants in packages: configuration
-- Update this README with any new conditional requirements
 
-Example of adding a new package:
-```yaml
-# In nceplibs-common.yaml
-specs:
-  - newpackage +common_variant
+**Important**: Files included via Spack's `include:` directive (those in `nceplibs/`) should NOT have a top-level `spack:` key. Their configuration sections are directly merged into the parent environment's `spack:` section.
 
-# In nceplibs-develop.yaml  
-packages:
-  newpackage:
-    require: '@develop +dev_specific_variant'
+## Notes
 
-# In nceplibs-numbered.yaml
-packages:
-  newpackage:
-    require: '@1.0.0 +prod_specific_variant'
-```
+- The profilers (scalasca, hpctoolkit, hpcviewer) depend on PAPI and other tools that may not work correctly with Intel or other compilers
+- Always verify your compiler before including profiler configurations
+- Package requirements use `when:` clauses for compiler-specific constraints (e.g., Intel-specific settings)
+- Files in `nceplibs/` are included configs and should NOT have a top-level `spack:` key
+
 ## Maintenance
 
 When adding new packages or requirements:

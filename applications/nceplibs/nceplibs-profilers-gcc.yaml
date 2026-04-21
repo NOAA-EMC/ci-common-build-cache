@@ -9,17 +9,18 @@
 # Example usage with develop version:
 #   spack:
 #     include:
-#       - nceplibs-common.yaml
-#       - nceplibs-profilers-gcc.yaml
-#     specs:
-#       - bacio@develop
-#       ... (other develop-specific specs)
-spack:
-  specs:
-  # Profilers (GCC only):
-  - scalasca ^scorep +fortran +mpi +mpi_f08 +papi
-  - hpctoolkit +mpi +papi
-  - hpcviewer
-  packages:
-    scorep:
-      require: ['~gcc-plugin']
+#       - nceplibs/nceplibs-common.yaml
+#       - nceplibs/nceplibs-profilers-gcc.yaml
+#     packages:
+#       bacio:
+#         require: '@develop'
+#       ... (other package requirements)
+# NOTE: This file is included via the 'include:' directive, so it should NOT have a top-level 'spack:' key
+specs:
+# Profilers (GCC only):
+- scalasca ^scorep +fortran +mpi +mpi_f08 +papi
+- hpctoolkit +mpi +papi
+- hpcviewer
+packages:
+  scorep:
+    require: ['~gcc-plugin']
