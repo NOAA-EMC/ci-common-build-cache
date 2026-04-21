@@ -1,0 +1,25 @@
+# Profiler configuration for nceplibs environments
+# IMPORTANT: Only include this file when using GCC compiler
+# Profilers have dependencies (PAPI, scorep) that may not be compatible with all compilers
+#
+# To use this configuration:
+# 1. Ensure you are using GCC as your compiler
+# 2. Include this file in your environment configuration
+#
+# Example usage with develop version:
+#   spack:
+#     include:
+#       - nceplibs-common.yaml
+#       - nceplibs-profilers-gcc.yaml
+#     specs:
+#       - bacio@develop
+#       ... (other develop-specific specs)
+spack:
+  specs:
+  # Profilers (GCC only):
+  - scalasca ^scorep +fortran +mpi +mpi_f08 +papi
+  - hpctoolkit +mpi +papi
+  - hpcviewer
+  packages:
+    scorep:
+      require: ['~gcc-plugin']

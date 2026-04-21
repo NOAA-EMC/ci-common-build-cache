@@ -81,6 +81,13 @@ jobs:
           spack env create ${app}-env applications/${app}.yaml
           spack env activate ${app}-env
           cd $SPACK_ENV # need for 'containerize'
+          
+          # Add profilers for nceplibs environments when using GCC
+          if [[ "${{ matrix.config.compiler }}" == "gcc" ]] && [[ "${app}" =~ ^nceplibs-(develop|numbered)$ ]]; then
+            echo "Adding GCC profilers configuration for ${app}"
+            spack config add "include:[${GITHUB_WORKSPACE}/applications/nceplibs/nceplibs-profilers-gcc.yaml]"
+          fi
+          
           spack config add 'config:install_tree:padded_length:200'
           cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
           spack repo add '$env/custom_repo'

@@ -1,0 +1,50 @@
+# Common configuration for nceplibs environments
+# This file contains shared settings used by both nceplibs-develop.yaml
+# and nceplibs-numbered.yaml
+spack:
+  view: false
+  concretizer:
+    unify: true
+  specs:
+  # NCEPLIBS core packages:
+  - bacio
+  - g2
+  - g2c
+  - ip precision=4,d,8
+  - w3emc precision=4,d,8
+  # Common dependencies:
+  - jasper +jpeg
+  - libpng
+  - openblas
+  - zlib-ng
+  - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
+  - py-numpy
+  # Test files:
+  - ip-test-files
+  - bufr-test-files
+  packages:
+    all:
+      require:
+        - any_of: ["+shared", "libs=shared", "@:"]
+    jasper:
+      require: +jpeg
+    python:
+      require: '@3.11'
+    esmf:
+      require: '~xerces ~pnetcdf +shared +external-parallelio'
+    mapl:
+      require: '~pflogger ~fargparse ~extdata2g'
+    netcdf-c:
+      require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
+    cmake:
+      require:
+      - any_of: ['@3.29']
+        when: '%intel'
+    hdf5:
+      require:
+      - any_of: ['+threadsafe']
+        when: '%intel'
+    papi:
+      require: ['@7.2.0']
+    boost:
+      require: ['@:1.88'] # hpctoolkit fails without deprecated libboost_system.so

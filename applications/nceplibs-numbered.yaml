@@ -1,50 +1,26 @@
+# nceplibs numbered/released version environment
+# This environment builds specific released versions of nceplibs packages
+#
+# To include profilers (GCC only), add the following to the include section:
+#   - nceplibs/nceplibs-profilers-gcc.yaml
+#
+# Example:
+#   spack:
+#     include:
+#       - nceplibs/nceplibs-common.yaml
+#       - nceplibs/nceplibs-profilers-gcc.yaml  # Only when using GCC
 spack:
-  view: false
-  concretizer:
-    unify: true
-  specs:
-  # Dependencies:
-  - bacio@2.6.0
-  - g2@3.5.1
-  - g2c@2.1.0
-  - ip@5.4.0 precision=4,d,8
-  - w3emc@2.10.0 precision=4,d,8 +extradeps
-  - jasper +jpeg
-  - libpng
-  - openblas
-  - zlib-ng
-  - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
-  - py-numpy
-  # Test files:
-  - ip-test-files
-  - bufr-test-files
-  # Profilers:
-  - scalasca ^scorep ~gcc-plugin
-  - hpctoolkit
-  - hpcviewer
+  include:
+    - nceplibs/nceplibs-common.yaml
   packages:
-    all:
-      require:
-        - any_of: ["+shared", "libs=shared", "@:"]
-    jasper:
-      require: +jpeg
-    python:
-      require: '@3.11'
-    esmf:
-      require: '~xerces ~pnetcdf +shared +external-parallelio'
-    mapl:
-      require: '~pflogger ~fargparse ~extdata2g'
-    netcdf-c:
-      require: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
-    cmake:
-      require:
-      - any_of: ['@3.29']
-        when: '%intel'
-    hdf5:
-      require:
-      - any_of: ['+threadsafe']
-        when: '%intel'
-    papi:
-      require: ['@7.2.0']
-    boost:
-      require: ['@:1.88'] # hpctoolkit fails without deprecated libboost_system.so
+    # NCEPLIBS version requirements (numbered):
+    bacio:
+      require: '@2.6.0'
+    g2:
+      require: '@3.5.1'
+    g2c:
+      require: '@2.1.0'
+    ip:
+      require: '@5.4.0'
+    w3emc:
+      require: '@2.10.0 +extradeps'
