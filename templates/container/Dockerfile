@@ -36,7 +36,7 @@ RUN find -L {{ paths.view }}/* -type f -exec readlink -f '{}' \; | \
     xargs file -i | \
     grep 'charset=binary' | \
     grep 'x-executable\|x-archive\|x-sharedlib' | \
-    awk -F: '{print $1}' | xargs strip
+    awk -F: '{print $1}' | grep -v libhpcrun.a | xargs strip
 {% endif %}
 
 # Modifications to the environment that are necessary to run
