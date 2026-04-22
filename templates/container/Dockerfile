@@ -43,6 +43,11 @@ RUN find -L {{ paths.view }}/* -type f -exec readlink -f '{}' \; | \
 RUN cd {{ paths.environment }} && \
     spack env activate --sh -d . > activate.sh
 
+# Record Spack installation location and version for later reference
+RUN echo "Spack is installed at: $(command -v spack)" && \
+    echo "Spack root: $(spack location --spack-root)" && \
+    spack --version
+
 {% endblock build_stage %}
 {% endif %}
 
@@ -50,13 +55,23 @@ RUN cd {{ paths.environment }} && \
 # Bare OS image to run the installed executables
 FROM {{ run.image }}
 
+# Copy compiled packages and Spack installation from builder
 COPY --from=builder {{ paths.environment }} {{ paths.environment }}
 COPY --from=builder {{ paths.store }} {{ paths.store }}
 {# paths.view is a symlink, so copy the parent to avoid dereferencing and duplicating it #}
 COPY --from=builder {{ paths.view_parent }} {{ paths.view_parent }}
 
+# Copy Spack installation to enable customization via spack install
+COPY --from=builder /opt/spack /opt/spack
+
+# Set up Spack environment for use in container
+ENV SPACK_ROOT=/opt/spack \
+    PATH=/opt/spack/bin:$PATH
+
 RUN { \
       echo '#!/bin/sh' \
+      && echo 'export SPACK_ROOT=/opt/spack' \
+      && echo 'export PATH=/opt/spack/bin:$PATH' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo 'exec "$@"'; \
     } > /entrypoint.sh \

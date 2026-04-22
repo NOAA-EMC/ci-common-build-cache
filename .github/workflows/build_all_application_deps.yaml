@@ -181,6 +181,13 @@ jobs:
           if [[ ! -d nceplibs ]]; then
             mkdir -p nceplibs
           fi
+          
+          # Capture Spack version information for reproducibility
+          spack_commit=$(git -C $SPACK_ROOT rev-parse HEAD)
+          spack_version=$(spack --version)
+          echo "Spack commit: ${spack_commit}"
+          echo "Spack version: ${spack_version}"
+          
           # Add container and view configuration to spack.yaml
           spack config add "view:true"
           
@@ -193,6 +200,9 @@ jobs:
               images:
                 os: ${image}
                 spack: develop
+              labels:
+                org.opencontainers.image.spack-commit: '${spack_commit}'
+                org.opencontainers.image.spack-version: '${spack_version}'
           EOF
 
           # For gcc-based configurations, also add os_packages to install gcc compilers
