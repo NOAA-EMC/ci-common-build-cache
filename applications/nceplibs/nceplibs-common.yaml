@@ -1,11 +1,10 @@
 # Common configuration for nceplibs environments
 # This file contains shared settings used by both nceplibs-develop.yaml
 # and nceplibs-numbered.yaml
-# This file is included via the 'include:' directive.
+# NOTE: This file is included via the 'include:' directive.
+# - Only configuration sections are allowed (packages, view, concretizer, etc.)
+# - The 'specs' section is NOT allowed in included files
 
-view: false
-concretizer:
-  unify: true
 packages:
   all:
     require:

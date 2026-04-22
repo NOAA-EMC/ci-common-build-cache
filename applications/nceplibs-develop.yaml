@@ -1,15 +1,14 @@
 # nceplibs develop version environment
 # This environment builds the latest development versions of nceplibs packages
 #
-# To include profilers (GCC only), add the following to the include section:
-#   - nceplibs/nceplibs-profilers-gcc.yaml
-#
-# Example:
-#   spack:
-#     include:
-#       - nceplibs/nceplibs-common.yaml
-#       - nceplibs/nceplibs-profilers-gcc.yaml  # Only when using GCC
+# Note: Profilers (scalasca, hpctoolkit, hpcviewer) are added automatically by CI for GCC builds.
+# To manually add profilers when using GCC:
+#   spack config add "include:[nceplibs/nceplibs-profilers-gcc.yaml]"
+#   spack add scalasca hpctoolkit hpcviewer
 spack:
+  view: false
+  concretizer:
+    unify: true
   include:
     - nceplibs/nceplibs-common.yaml
   specs:
