@@ -214,7 +214,7 @@ jobs:
                   - gcc-${{ matrix.config.compiler-version }}
                   - g++-${{ matrix.config.compiler-version }}
                   - gfortran-${{ matrix.config.compiler-version }}
-            EOF
+          EOF
           fi
 
 
