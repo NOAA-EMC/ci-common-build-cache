@@ -94,7 +94,7 @@ jobs:
             # Include profiler package configuration (using relative path now that files are copied)
             spack config add "include:[nceplibs/nceplibs-profilers-gcc.yaml]"
             # Add profilers
-            spack add scalasca hpctoolkit hpcviewer
+            spack add scalasca hpctoolkit
           fi
           
           spack config add 'config:install_tree:padded_length:200'
