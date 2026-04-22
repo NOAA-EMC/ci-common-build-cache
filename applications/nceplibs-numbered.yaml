@@ -2,7 +2,9 @@
 # This environment builds specific released versions of nceplibs packages
 #
 # Note: Profilers (scalasca, hpctoolkit, hpcviewer) are added automatically by CI for GCC builds.
+# The nceplibs configuration directory is copied to the environment for containerization.
 # To manually add profilers when using GCC:
+#   cp -r applications/nceplibs $SPACK_ENV/.
 #   spack config add "include:[nceplibs/nceplibs-profilers-gcc.yaml]"
 #   spack add scalasca hpctoolkit hpcviewer
 spack:

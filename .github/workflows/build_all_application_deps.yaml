@@ -82,11 +82,17 @@ jobs:
           spack env activate ${app}-env
           cd $SPACK_ENV # need for 'containerize'
           
+          # Copy nceplibs configuration files for nceplibs environments (needed for containerization)
+          if [[ "${app}" =~ ^nceplibs-(develop|numbered)$ ]]; then
+            echo "Copying nceplibs configuration directory for ${app}"
+            cp -r $GITHUB_WORKSPACE/applications/nceplibs $SPACK_ENV/.
+          fi
+          
           # Add profilers for nceplibs environments when using GCC
           if [[ "${{ matrix.config.compiler }}" == "gcc" ]] && [[ "${app}" =~ ^nceplibs-(develop|numbered)$ ]]; then
             echo "Adding GCC profilers configuration for ${app}"
-            # Include profiler package configuration
-            spack config add "include:[${GITHUB_WORKSPACE}/applications/nceplibs/nceplibs-profilers-gcc.yaml]"
+            # Include profiler package configuration (using relative path now that files are copied)
+            spack config add "include:[nceplibs/nceplibs-profilers-gcc.yaml]"
             # Add profilers
             spack add scalasca hpctoolkit hpcviewer
           fi
