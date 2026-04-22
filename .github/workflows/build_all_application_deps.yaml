@@ -190,15 +190,33 @@ jobs:
           fi
           # Add container and view configuration to spack.yaml
           spack config add "view:true"
+          
+          # Add common container and mirror configuration
           cat >> $SPACK_ENV/spack.yaml <<EOF
+            mirrors:
+              emc-common-build-cache: oci://ghcr.io/${OCI_USERNAME}/ci-common-build-cache
             container:
               format: docker
               images:
                 os: ${image}
                 spack: develop
-            mirrors:
-              emc-common-build-cache: oci://ghcr.io/${OCI_USERNAME}/ci-common-build-cache
           EOF
+
+          # For gcc-based configurations, also add os_packages to install gcc compilers
+          if [[ "${{ matrix.config.compiler }}" == "gcc" ]]; then
+            cat >> $SPACK_ENV/spack.yaml <<EOF
+              os_packages:
+                build:
+                  - gcc-${{ matrix.config.compiler-version }}
+                  - g++-${{ matrix.config.compiler-version }}
+                  - gfortran-${{ matrix.config.compiler-version }}
+                final:
+                  - gcc-${{ matrix.config.compiler-version }}
+                  - g++-${{ matrix.config.compiler-version }}
+                  - gfortran-${{ matrix.config.compiler-version }}
+            EOF
+          fi
+
 
           spack config blame
           
