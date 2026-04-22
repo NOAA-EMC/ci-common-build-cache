@@ -1,19 +1,17 @@
-# nceplibs numbered/released version environment
-# This environment builds specific released versions of nceplibs packages
-#
-# Note: Profilers (scalasca, hpctoolkit, hpcviewer) are added automatically by CI for GCC builds.
-# The nceplibs configuration directory is copied to the environment for containerization.
-# To manually add profilers when using GCC:
-#   cp -r applications/nceplibs $SPACK_ENV/.
-#   spack config add "include:[nceplibs/nceplibs-profilers-gcc.yaml]"
-#   spack add scalasca hpctoolkit hpcviewer
+# NCEPLIBS numbered/released version environment
+# This environment builds specific released versions of NCEPLIBS packages
+
 spack:
   view: false
   concretizer:
     unify: true
   include:
     - nceplibs/nceplibs-common.yaml
+  definitions:
+  - when: env.get("COMPILER_NAME") == "gcc"
+    profiler_specs: [scalasca, hpctoolkit]
   specs:
+  - $profiler_specs
   # NCEPLIBS core packages:
   - bacio@2.6.0
   - g2@3.5.1

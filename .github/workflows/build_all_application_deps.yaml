@@ -53,6 +53,7 @@ jobs:
         env:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPILER_NAME: ${{ matrix.config.compiler }}
         run: |
           if [ "${{ runner.debug }}" == 1 ]; then set -x; fi
           
@@ -88,14 +89,6 @@ jobs:
             cp -r $GITHUB_WORKSPACE/applications/nceplibs $SPACK_ENV/.
           fi
           
-          # Add profilers for nceplibs environments when using GCC
-          if [[ "${{ matrix.config.compiler }}" == "gcc" ]] && [[ "${app}" =~ ^nceplibs-(develop|numbered)$ ]]; then
-            echo "Adding GCC profilers configuration for ${app}"
-            # Include profiler package configuration (using relative path now that files are copied)
-            spack config add "include:[nceplibs/nceplibs-profilers-gcc.yaml]"
-            # Add profilers
-            spack add scalasca hpctoolkit
-          fi
           
           spack config add 'config:install_tree:padded_length:200'
           cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
@@ -228,12 +221,24 @@ jobs:
           echo "::endgroup::"
 
           # Build and push the container image
+          image_repo=ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}
+          image_ref=${image_repo}:latest
           echo "::group:: Docker build"
-          docker build -t ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest .
+          docker build -t ${image_ref} .
           echo "::endgroup::"
-          echo ${OCI_TOKEN} | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
+          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
           echo "::group:: Docker push"
-          docker push ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}:latest
+          docker push ${image_ref}
           echo "::endgroup::"
+
+          # Record immutable digest reference for reproducible pulls.
+          repo_digest=$(docker image inspect ${image_ref} --format '{{join .RepoDigests "\n"}}' | grep -Po "@sha256:\K.*")
+          echo "Image tag: ${image_ref}"
+          echo "Image digest: ${repo_digest}"
+          {
+            echo "### Container image"
+            echo "- Tag: \`${image_ref}\`"
+            echo "- Digest: \`${repo_digest}\`"
+          } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi

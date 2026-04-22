@@ -33,3 +33,7 @@ packages:
     require: ['@:1.88'] # hpctoolkit fails without deprecated libboost_system.so
   scorep:
     require: ['~gcc-plugin']
+  scalasca:
+    require: ['^scorep +fortran +mpi +mpi_f08 +papi']
+  hpctoolkit:
+    require: ['+mpi +papi']
