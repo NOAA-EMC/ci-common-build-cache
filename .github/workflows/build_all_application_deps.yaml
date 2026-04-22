@@ -184,6 +184,10 @@ jobs:
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
           rm $SPACK_ROOT/share/spack/templates/container -rf
           spack repo remove custom_repo
+          # Ensure nceplibs directory exists for Docker COPY (create empty if not nceplibs app)
+          if [[ ! -d nceplibs ]]; then
+            mkdir -p nceplibs
+          fi
           # Add container and view configuration to spack.yaml
           spack config add "view:true"
           cat >> $SPACK_ENV/spack.yaml <<EOF

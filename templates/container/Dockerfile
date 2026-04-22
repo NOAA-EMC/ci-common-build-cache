@@ -21,7 +21,7 @@ set -o noclobber \
 {{ manifest }} > {{ paths.environment }}/spack.yaml
 COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
-COPY nceplibs {{ paths.environment }}/nceplibs 2>/dev/null || true
+COPY nceplibs {{ paths.environment }}/nceplibs
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
