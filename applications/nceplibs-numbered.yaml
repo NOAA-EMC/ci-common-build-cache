@@ -38,6 +38,7 @@ spack:
       version: ['2.1.0']
     ip:
       version: ['5.4.0']
+      variants: 'precision=4,d,8'
     w3emc:
       version: ['2.10.0']
-      variants: '+extradeps'
+      variants: 'precision=4,d,8 +extradeps'
