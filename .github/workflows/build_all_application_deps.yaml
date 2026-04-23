@@ -209,14 +209,11 @@ jobs:
           if [[ "${{ matrix.config.compiler }}" == "gcc" ]]; then
             cat >> $SPACK_ENV/spack.yaml <<EOF
               os_packages:
-                build:
-                  - gcc-${{ matrix.config.compiler-version }}
-                  - g++-${{ matrix.config.compiler-version }}
-                  - gfortran-${{ matrix.config.compiler-version }}
                 final:
                   - gcc-${{ matrix.config.compiler-version }}
                   - g++-${{ matrix.config.compiler-version }}
                   - gfortran-${{ matrix.config.compiler-version }}
+                  - git
           EOF
           fi
 
