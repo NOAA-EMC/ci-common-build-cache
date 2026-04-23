@@ -39,4 +39,5 @@ spack:
     ip:
       version: ['5.4.0']
     w3emc:
-      version: ['2.10.0 +extradeps']
+      version: ['2.10.0']
+      variants: '+extradeps'
