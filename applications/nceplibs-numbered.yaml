@@ -31,12 +31,12 @@ spack:
   packages:
     # NCEPLIBS version requirements (numbered):
     bacio:
-      require: '@2.6.0'
+      version: ['2.6.0']
     g2:
-      require: '@3.5.1'
+      version: ['3.5.1']
     g2c:
-      require: '@2.1.0'
+      version: ['2.1.0']
     ip:
-      require: '@5.4.0'
+      version: ['5.4.0']
     w3emc:
-      require: '@2.10.0 +extradeps'
+      version: ['2.10.0 +extradeps']

@@ -1,5 +1,5 @@
-# nceplibs develop version environment
-# This environment builds the latest development versions of nceplibs packages
+# NCEPLIBS 'develop' version environment
+# This environment builds the latest development versions of NCEPLIBS packages
 
 spack:
   view: false
@@ -31,12 +31,14 @@ spack:
   packages:
     # NCEPLIBS version requirements (develop):
     bacio:
-      require: '@develop'
+      version: ['develop']
     g2:
-      require: '@develop +g2c_compare'
+      version: ['develop']
+      variants: '+g2c_compare'
     g2c:
-      require: '@develop +utils +build_v2_api'
+      version: ['develop']
+      variants: '+utils +build_v2_api'
     ip:
-      require: '@develop'
+      version: ['develop']
     w3emc:
-      require: '@develop'
+      version: ['develop']
