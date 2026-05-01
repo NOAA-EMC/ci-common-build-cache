@@ -170,7 +170,7 @@ jobs:
           label=${label//:/x}
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
 
-          # Push individual packages to GitHub Packages build cache (OCI repo)
+          # Push individual packages to GitHub Packages build cache (OCI repo).
           spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           spack config remove 'config:template_dirs'
@@ -249,3 +249,23 @@ jobs:
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
+
+  update-buildcache-index:
+    needs: [common-build-cache]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - name: "Get Spack"
+        uses: spack/setup-spack@v3
+
+      - name: "Update buildcache index"
+        shell: spack-bash {0}
+        env:
+          OCI_USERNAME: ${{ github.repository_owner }}
+          OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache
+          spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
+          spack buildcache update-index emc-common-build-cache
