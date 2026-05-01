@@ -173,7 +173,7 @@ jobs:
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
 
           # Push individual packages to GitHub Packages build cache (OCI repo).
-          spack buildcache push --update-index --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
+          spack buildcache push --update-index --unsigned emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           spack config remove 'config:template_dirs'
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
