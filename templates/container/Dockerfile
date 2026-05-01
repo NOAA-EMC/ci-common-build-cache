@@ -85,6 +85,16 @@ RUN {% if os_package_update %}{{ os_packages_final.update }} \
  && {% endif %}{{ os_packages_final.install }} {{ os_packages_final.list | join | replace('\n', ' ') }} \
  && {{ os_packages_final.clean }}
 {% endif %}
+
+# Ensure versionless GNU compiler paths exist when only versioned binaries are installed.
+RUN set -e; \
+        for tool in gcc g++ gfortran; do \
+            candidate=$(ls /usr/bin/${tool}-[0-9]* 2>/dev/null | sort -V | tail -n1 || true); \
+            if [ -n "${candidate}" ]; then \
+                priority=${candidate##*-}; \
+                update-alternatives --install /usr/bin/${tool} ${tool} ${candidate} ${priority}; \
+            fi; \
+        done
 {% endblock final_stage %}
 {% for label, value in labels.items() %}
 LABEL "{{ label }}"="{{ value }}"
