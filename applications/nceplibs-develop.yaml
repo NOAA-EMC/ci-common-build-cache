@@ -7,11 +7,11 @@ spack:
     unify: true
   include:
     - nceplibs/nceplibs-common.yaml
-  definitions:
-  - when: env.get("COMPILER_NAME") == "gcc"
-    profiler_specs: [scalasca, hpctoolkit]
-  specs:
-  - $profiler_specs
+#  definitions:
+#  - when: env.get("COMPILER_NAME") == "gcc"
+#    profiler_specs: [scalasca, hpctoolkit]
+#  specs:
+#  - $profiler_specs
   # NCEPLIBS core packages:
   - bacio@develop
   - g2@develop +g2c_compare
