@@ -254,7 +254,6 @@ jobs:
 
   update-buildcache-index:
     needs: [common-build-cache]
-    if: ${{ always() }}
     runs-on: ubuntu-24.04
     permissions:
       packages: write
