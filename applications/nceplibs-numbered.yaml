@@ -25,6 +25,8 @@ spack:
   - zlib-ng
   - netcdf-fortran ^netcdf-c@4.9.2 +mpi  ^hdf5@1.14.5 +mpi
   - py-numpy
+  - cmake
+  - gmake
   # Test files:
   - ip-test-files
   - bufr-test-files
