@@ -243,13 +243,15 @@ jobs:
           echo "::endgroup::"
 
           # Record immutable digest reference for reproducible pulls.
-          repo_digest=$(docker image inspect ${image_ref} --format '{{join .RepoDigests "\n"}}' | grep -Po "@sha256:\K.*")
+          image_with_digest=$(docker image inspect ${image_ref} --format '{{join .RepoDigests "\n"}}')
+          repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
           {
             echo "### Container image"
             echo "- Tag: \`${image_ref}\`"
             echo "- Digest: \`${repo_digest}\`"
+            echo "- Tag w/digest: \`${image_with_digest}\`"
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
