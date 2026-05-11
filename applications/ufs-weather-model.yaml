@@ -18,7 +18,7 @@ spack:
   - crtm@2.4.0.1
   - g2@3.5.1
   - g2tmpl
-  - ip@5.1.0
+  - ip
   - sp@2.5.0
   - w3emc@2.12
   - gftl-shared
