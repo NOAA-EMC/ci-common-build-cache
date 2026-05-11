@@ -89,6 +89,8 @@ RUN { \
 
 {% block final_stage %}
 
+COPY install-intel.sh /opt/install-intel.sh
+
 {% if os_packages_final %}
 RUN {% if os_package_update %}{{ os_packages_final.update }} \
  && {% endif %}{{ os_packages_final.install }} {{ os_packages_final.list | join | replace('\n', ' ') }} \

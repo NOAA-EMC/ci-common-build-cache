@@ -225,7 +225,16 @@ jobs:
 
 
           spack config blame
-          
+
+          # Generate install-intel.sh from template, substituting matrix config values
+          sed \
+            -e 's/@COMPILER@/${{ matrix.config.compiler }}/g' \
+            -e 's/@COMPILER_VERSION@/${{ matrix.config.compiler-version }}/g' \
+            -e 's/@MPI@/${{ matrix.config.mpi }}/g' \
+            -e 's/@MPI_VERSION@/${{ matrix.config.mpi-version }}/g' \
+            "${GITHUB_WORKSPACE}/templates/container/install-intel.sh.in" > install-intel.sh
+          chmod +x install-intel.sh
+
           # Generate Dockerfile using spack containerize (already in $SPACK_ENV from earlier cd)
           $(which spack) containerize > Dockerfile
 
