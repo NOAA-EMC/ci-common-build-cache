@@ -192,6 +192,11 @@ jobs:
           spack buildcache push --unsigned --without-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
           spack buildcache update-index emc-common-build-cache
 
+          # Push packages to a local filesystem build cache for use in the Docker build.
+          fs_buildcache=/tmp/spack-buildcache
+          mkdir -p ${fs_buildcache}
+          spack buildcache push --unsigned --without-build-dependencies ${fs_buildcache}
+
           spack config remove 'config:template_dirs'
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
           rm $SPACK_ROOT/share/spack/templates/container -rf
@@ -261,14 +266,13 @@ jobs:
           # Build and push the container image
           image_repo=ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}
           image_ref=${image_repo}:latest
-          host_spack_store=${SPACK_ROOT}/opt/spack
-          if [[ ! -d "${host_spack_store}" ]]; then
-            echo "Expected Spack install tree does not exist: ${host_spack_store}"
+          if [[ ! -d "${fs_buildcache}" ]]; then
+            echo "Filesystem build cache does not exist: ${fs_buildcache}"
             exit 1
           fi
           echo "::group:: Docker build"
           docker buildx build --load \
-            --build-context spack_store=${host_spack_store} \
+            --build-context spack_buildcache=${fs_buildcache} \
             -t ${image_ref} .
           echo "::endgroup::"
           printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
