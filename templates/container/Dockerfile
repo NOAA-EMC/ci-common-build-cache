@@ -74,11 +74,13 @@ COPY --from=builder /opt/spack-helpers /opt/spack-helpers
 ENV SPACK_ROOT=/opt/spack \
     PATH=/opt/spack/bin:$PATH
 
+# Register the extension once in the image after activating Spack.
+RUN /bin/bash -lc 'source /opt/spack/share/spack/setup-env.sh && source /opt/spack-helpers/source_me.sh'
+
 RUN { \
-    echo '#!/bin/bash' \
+        echo '#!/bin/sh' \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
-    && echo 'source /opt/spack-helpers/source_me.sh' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo 'exec "$@"'; \
     } > /entrypoint.sh \
