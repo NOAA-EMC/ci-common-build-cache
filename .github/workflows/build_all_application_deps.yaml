@@ -92,11 +92,9 @@ jobs:
           
           
           spack config add 'config:install_tree:padded_length:200'
-          cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
-          spack repo add '$env/custom_repo'
 
           # Materialize spack-packages directly under $SPACK_ENV.
-          spack_packages_repo_url=https://github.com/spack/spack-packages
+          spack_packages_repo_url=https://github.com/JCSDA/spack-packages
           spack repo add "$spack_packages_repo_url" '$env/spack-packages'
           spack_packages_commit=$(git -C "$SPACK_ENV/spack-packages" rev-parse HEAD || true)
           if [[ -z "${spack_packages_commit}" ]]; then
@@ -105,6 +103,9 @@ jobs:
           fi
           echo "spack-packages origin: ${spack_packages_repo_url}"
           echo "spack-packages commit: ${spack_packages_commit}"
+
+          cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
+          spack repo add '$env/custom_repo'
 
           # Set up compilers & MPI for this application
           COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
