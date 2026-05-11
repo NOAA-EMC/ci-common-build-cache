@@ -3,17 +3,27 @@ spack:
   concretizer:
     unify: true
   specs:
+  # Include ufs-weather-model just for testing; it will be deleted from container
   - ufs-weather-model app=S2SWA
-  - mapl@2.54.2 
-  - esmf@8.8.0
-  - parallelio@2.6.3
-  - netcdf-c@4.9.2
+  # Individual deps (pinned versions are at least as new as in ufs_common.lua):
+  - jasper
+  - libpng
   - hdf5@1.14.5
-  - sp@2.3.3
+  - netcdf-c@4.9.2
+  - netcdf-fortran@4.6.1
+  - parallelio@2.6.3
+  - esmf@8.8.0
+  - fms@2024.02 precision=32,64 constants=GFS +deprecated_io
   - bacio@2.4.1
-  - ip@3.3.3
-  - w3emc@2.12
+  - crtm@2.4.0.1
   - g2@3.5.1
+  - g2tmpl
+  - ip@5.1.0
+  - sp@2.5.0
+  - w3emc@2.12
+  - gftl-shared
+  - mapl@2.54.2 
+  - scotch
   - cmake
   - gmake
   packages:
