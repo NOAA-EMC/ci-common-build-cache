@@ -218,9 +218,9 @@ jobs:
 
           # For gcc-based configurations, also add the compiler toolchain.
           if [[ "${{ matrix.config.compiler }}" == "gcc" ]]; then
-            echo "      - gcc-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
-            echo "      - g++-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
-            echo "      - gfortran-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
+            echo "        - gcc-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
+            echo "        - g++-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
+            echo "        - gfortran-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
           fi
 
 
