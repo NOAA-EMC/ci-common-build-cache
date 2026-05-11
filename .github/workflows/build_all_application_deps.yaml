@@ -95,6 +95,24 @@ jobs:
           cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
           spack repo add '$env/custom_repo'
 
+          # Copy the same spack-packages repo currently configured in this workflow.
+          spack_packages_repo_path=$(spack repo list | awk '/spack-packages/ {print $NF; exit}')
+          if [[ -z "${spack_packages_repo_path}" || ! -d "${spack_packages_repo_path}" ]]; then
+            echo "Unable to locate active spack-packages repository path from 'spack repo list'."
+            spack repo list || true
+            exit 1
+          fi
+          spack_packages_repo_url=$(git -C "${spack_packages_repo_path}" config --get remote.origin.url || true)
+          spack_packages_commit=$(git -C "${spack_packages_repo_path}" rev-parse HEAD || true)
+          if [[ -z "${spack_packages_commit}" ]]; then
+            echo "Unable to resolve commit for detected spack-packages repository: ${spack_packages_repo_path}"
+            exit 1
+          fi
+          echo "Using spack-packages repo at: ${spack_packages_repo_path}"
+          echo "spack-packages origin: ${spack_packages_repo_url}"
+          echo "spack-packages commit: ${spack_packages_commit}"
+          cp -a "${spack_packages_repo_path}" "$SPACK_ENV/spack-packages"
+
           # Set up compilers & MPI for this application
           COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
           if [ ${{ matrix.config.compiler }} == 'gcc' ]; then
@@ -210,6 +228,8 @@ jobs:
               labels:
                 org.opencontainers.image.spack-commit: '${spack_commit}'
                 org.opencontainers.image.spack-version: '${spack_version}'
+                org.opencontainers.image.spack-packages-origin: '${spack_packages_repo_url}'
+                org.opencontainers.image.spack-packages-commit: '${spack_packages_commit}'
               strip: false
               os_packages:
                 final:
@@ -247,8 +267,15 @@ jobs:
           # Build and push the container image
           image_repo=ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache/${app}-${label}
           image_ref=${image_repo}:latest
+          host_spack_store=${SPACK_ROOT}/opt/spack
+          if [[ ! -d "${host_spack_store}" ]]; then
+            echo "Expected Spack install tree does not exist: ${host_spack_store}"
+            exit 1
+          fi
           echo "::group:: Docker build"
-          docker build -t ${image_ref} .
+          docker buildx build --load \
+            --build-context spack_store=${host_spack_store} \
+            -t ${image_ref} .
           echo "::endgroup::"
           printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
           echo "::group:: Docker push"

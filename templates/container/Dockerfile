@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 {% if render_phase.bootstrap %}
 {{ bootstrap.recipe }}
 
@@ -22,12 +23,16 @@ set -o noclobber \
 COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 COPY nceplibs {{ paths.environment }}/nceplibs
+COPY spack-packages /opt/spack/spack-packages
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
 RUN spack --env {{ paths.environment }} repo add '{{ paths.environment }}/custom_repo'
 RUN cat {{ paths.environment }}/spack.yaml
-RUN spack --env {{ paths.environment }} install --cache-only --no-check-signature --fail-fast
+RUN --mount=type=bind,from=spack_store,source=.,target={{ paths.store }},readonly \
+    test -d {{ paths.store }}/.spack-db && \
+    echo "Using mounted host Spack installation tree at {{ paths.store }}" && \
+        spack --env {{ paths.environment }} install --cache-only --no-check-signature --fail-fast
 RUN spack --env {{ paths.environment }} gc -y
 
 {% if strip %}
@@ -74,20 +79,15 @@ COPY --from=builder /opt/spack-helpers /opt/spack-helpers
 ENV SPACK_ROOT=/opt/spack \
     PATH=/opt/spack/bin:$PATH
 
-# Register the extension once in the image after activating Spack.
-RUN /bin/bash -lc 'source /opt/spack/share/spack/setup-env.sh && source /opt/spack-helpers/source_me.sh'
-
-# Persist initialization for interactive/login shells in the final image.
-RUN { \
-                echo '. /opt/spack/share/spack/setup-env.sh' \
-            && echo '. /opt/spack-helpers/source_me.sh'; \
-        } > /etc/profile.d/spack-helpers.sh
+# Register the vendored package repository in this image's Spack config.
+RUN /bin/bash -lc 'source /opt/spack/share/spack/setup-env.sh && (spack repo list | grep -q "/opt/spack/spack-packages" || spack repo add /opt/spack/spack-packages)'
 
 RUN { \
         echo '#!/bin/sh' \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
-      && echo '. /opt/spack/share/spack/setup-env.sh' \
+      && echo '. $SPACK_ROOT/share/spack/setup-env.sh' \
+      && echo 'spack repo list | grep -q "/opt/spack/spack-packages" || spack repo add /opt/spack/spack-packages >/dev/null 2>&1' \
       && echo '. /opt/spack-helpers/source_me.sh 2>&1 > /dev/null' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo 'export PATH=/usr/bin:$PATH' \
