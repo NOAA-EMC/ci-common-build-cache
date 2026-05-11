@@ -48,6 +48,9 @@ RUN echo "Spack is installed at: $(command -v spack)" && \
     echo "Spack root: $(spack location --spack-root)" && \
     spack --version
 
+# Install spack-helpers extension source for inclusion in final image.
+RUN git clone --depth 1 --branch develop https://github.com/NOAA-EMC/spack-helpers.git /opt/spack-helpers
+
 {% endblock build_stage %}
 {% endif %}
 
@@ -64,14 +67,18 @@ COPY --from=builder {{ paths.view_parent }} {{ paths.view_parent }}
 # Copy Spack installation to enable customization via spack install
 COPY --from=builder /opt/spack /opt/spack
 
+# Copy Spack extension helpers into the requested final image location
+COPY --from=builder /opt/spack-helpers /opt/spack-helpers
+
 # Set up Spack environment for use in container
 ENV SPACK_ROOT=/opt/spack \
     PATH=/opt/spack/bin:$PATH
 
 RUN { \
-      echo '#!/bin/sh' \
+    echo '#!/bin/bash' \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
+    && echo 'source /opt/spack-helpers/source_me.sh' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo 'exec "$@"'; \
     } > /entrypoint.sh \
