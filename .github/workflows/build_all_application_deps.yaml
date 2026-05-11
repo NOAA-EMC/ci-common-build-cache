@@ -72,6 +72,9 @@ jobs:
           sudo mv /usr/local /usr/local_mv
           sudo rm -rf /usr/local_mv &
 
+          # Remove Spack-provided build cache to avoid confusion
+          spack mirror rm github-actions-buildcache || true
+
           # Set up mirror for build caching:
           spack mirror add emc-common-build-cache oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache-B
           spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache
