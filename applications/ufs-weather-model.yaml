@@ -15,7 +15,7 @@ spack:
   - esmf@8.8.0
   - fms@2024.02 precision=32,64 constants=GFS +deprecated_io
   - bacio@2.4.1
-  - crtm@2.4.0.1
+  - crtm
   - g2@3.5.1
   - g2tmpl
   - ip
