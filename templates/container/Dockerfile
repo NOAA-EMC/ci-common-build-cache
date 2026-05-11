@@ -77,11 +77,20 @@ ENV SPACK_ROOT=/opt/spack \
 # Register the extension once in the image after activating Spack.
 RUN /bin/bash -lc 'source /opt/spack/share/spack/setup-env.sh && source /opt/spack-helpers/source_me.sh'
 
+# Persist initialization for interactive/login shells in the final image.
+RUN { \
+                echo '. /opt/spack/share/spack/setup-env.sh' \
+            && echo '. /opt/spack-helpers/source_me.sh'; \
+        } > /etc/profile.d/spack-helpers.sh
+
 RUN { \
         echo '#!/bin/sh' \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
+      && echo '. /opt/spack/share/spack/setup-env.sh' \
+      && echo '. /opt/spack-helpers/source_me.sh 2>&1 > /dev/null' \
       && echo '.' {{ paths.environment }}/activate.sh \
+      && echo 'export PATH=/usr/bin:$PATH' \
       && echo 'exec "$@"'; \
     } > /entrypoint.sh \
 && chmod a+x /entrypoint.sh \
