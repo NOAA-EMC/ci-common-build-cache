@@ -206,17 +206,17 @@ jobs:
                 org.opencontainers.image.spack-commit: '${spack_commit}'
                 org.opencontainers.image.spack-version: '${spack_version}'
               strip: false
-          EOF
-
-          # For gcc-based configurations, also add os_packages to install gcc compilers
-          if [[ "${{ matrix.config.compiler }}" == "gcc" ]]; then
-            cat >> $SPACK_ENV/spack.yaml <<EOF
               os_packages:
                 final:
+                  - git
+          EOF
+
+          # For gcc-based configurations, also add the compiler toolchain under "".
+          if [[ "${{ matrix.config.compiler }}" == "gcc" ]]; then
+            cat >> $SPACK_ENV/spack.yaml <<EOF
                   - gcc-${{ matrix.config.compiler-version }}
                   - g++-${{ matrix.config.compiler-version }}
                   - gfortran-${{ matrix.config.compiler-version }}
-                  - git
           EOF
           fi
 
