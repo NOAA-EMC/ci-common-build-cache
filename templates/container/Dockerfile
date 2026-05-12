@@ -31,7 +31,7 @@ RUN spack --env {{ paths.environment }} repo add '{{ paths.environment }}/custom
 RUN cat {{ paths.environment }}/spack.yaml
 RUN --mount=type=bind,from=spack_buildcache,source=.,target=/spack-buildcache,readonly \
     spack mirror add local-build-cache file:///spack-buildcache && \
-    spack --env {{ paths.environment }} install --cache-only --no-check-signature --fail-fast && \
+    spack --env {{ paths.environment }} install --cache-only --include-build-deps --no-check-signature --fail-fast && \
     spack mirror remove local-build-cache
 RUN spack --env {{ paths.environment }} gc -y
 
