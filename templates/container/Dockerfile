@@ -80,7 +80,7 @@ ENV SPACK_ROOT=/opt/spack \
     PATH=/opt/spack/bin:$PATH
 
 RUN { \
-      echo '#!/bin/sh' \
+      echo '#!/bin/bash' \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
       && echo '. $SPACK_ROOT/share/spack/setup-env.sh' \
