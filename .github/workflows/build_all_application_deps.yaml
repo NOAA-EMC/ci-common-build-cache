@@ -276,6 +276,7 @@ jobs:
           echo "::group:: Docker build"
           docker buildx build --load \
             --build-context spack_buildcache=${fs_buildcache} \
+            --build-context spack_packages=${SPACK_ROOT}/spack-packages \
             -t ${image_ref} .
           echo "::endgroup::"
           printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin

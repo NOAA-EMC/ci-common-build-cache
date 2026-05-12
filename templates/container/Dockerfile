@@ -23,7 +23,8 @@ set -o noclobber \
 COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 COPY nceplibs {{ paths.environment }}/nceplibs
-COPY spack-packages /opt/spack/spack-packages
+RUN --mount=type=bind,from=spack_packages,source=.,target=/tmp/spack-packages \
+    cp -r /tmp/spack-packages /opt/spack/spack-packages
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
@@ -87,7 +88,6 @@ RUN { \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
       && echo '. $SPACK_ROOT/share/spack/setup-env.sh' \
-      && echo 'spack repo add /opt/spack/spack-packages >/dev/null 2>&1' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo '. /opt/spack-helpers/source_me.sh >/dev/null 2>&1' \
       && echo 'export PATH=/usr/bin:$PATH' \
