@@ -23,7 +23,7 @@ set -o noclobber \
 COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 COPY nceplibs {{ paths.environment }}/nceplibs
-COPY spack-packages {{ paths.environment }}/spack-packages
+COPY spack-packages /opt/spack/spack-packages
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
@@ -73,7 +73,7 @@ COPY --from=builder {{ paths.view_parent }} {{ paths.view_parent }}
 COPY --from=builder /opt/spack /opt/spack
 
 # Ensure custom package repos are present where entrypoint expects them.
-COPY --from=builder {{ paths.environment }}/spack-packages /opt/spack/spack-packages
+COPY --from=builder /opt/spack/spack-packages /opt/spack/spack-packages
 
 # Copy Spack extension helpers into the requested final image location
 COPY --from=builder /opt/spack-helpers /opt/spack-helpers
