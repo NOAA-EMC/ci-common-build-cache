@@ -33,7 +33,7 @@ RUN --mount=type=bind,from=spack_buildcache,source=.,target=/spack-buildcache,re
     spack mirror add local-build-cache file:///spack-buildcache && \
     spack --env {{ paths.environment }} install --cache-only --include-build-deps --no-check-signature --fail-fast && \
     spack mirror remove local-build-cache
-RUN spack --env {{ paths.environment }} gc -y
+#RUN spack --env {{ paths.environment }} gc --keep-build-dependencies -y
 
 {% if strip %}
 # Strip all the binaries
