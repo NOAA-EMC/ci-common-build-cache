@@ -176,7 +176,7 @@ jobs:
 
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
           set +e
-          spack install --no-check-signature --show-log-on-error --fail-fast $NOCACHE
+          spack install --include-build-deps --no-check-signature --show-log-on-error --fail-fast $NOCACHE
           app_rc=$?
           set -e
 
@@ -187,7 +187,7 @@ jobs:
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
 
           # Push individual packages to GitHub Packages build cache (OCI repo).
-          spack buildcache push --unsigned --without-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
+          spack buildcache push --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           # Push packages to a local filesystem build cache for use in the Docker build.
           fs_buildcache=/tmp/spack-buildcache
