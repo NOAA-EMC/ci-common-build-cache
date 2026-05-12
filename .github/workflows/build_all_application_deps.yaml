@@ -250,7 +250,7 @@ jobs:
             -e 's/@COMPILER_VERSION@/${{ matrix.config.compiler-version }}/g' \
             -e 's/@MPI@/${{ matrix.config.mpi }}/g' \
             -e 's/@MPI_VERSION@/${{ matrix.config.mpi-version }}/g' \
-            "${GITHUB_WORKSPACE}/templates/container/install-intel.sh.in" > install-intel.sh
+            "${GITHUB_WORKSPACE}/install-intel.sh.in" > install-intel.sh
           chmod +x install-intel.sh
 
           # Generate Dockerfile using spack containerize (already in $SPACK_ENV from earlier cd)

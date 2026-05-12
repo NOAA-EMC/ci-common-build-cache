@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+
+# Download the key to system keyring
+wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+| gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+
+# Add signed entry to apt sources and configure the APT client to use Intel repository:
+echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+
+sudo apt-get update
+
+compiler_version="@COMPILER_VERSION@"
+mpi_version="@MPI_VERSION@"
+packages=()
+
+if [[ "@COMPILER@" == "classic" ]]; then
+  classic_cxx_version=$(apt-cache madison intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic | awk '{ print $3 }' | grep "^${compiler_version//./\\.}" | head -1)
+  classic_fortran_version=$(apt-cache madison intel-oneapi-compiler-fortran | awk '{ print $3 }' | grep "^${compiler_version//./\\.}" | head -1)
+  packages+=("intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic-${classic_cxx_version}")
+  packages+=("intel-oneapi-compiler-fortran-${classic_fortran_version}")
+elif [[ "@COMPILER@" == "oneapi" ]]; then
+  oneapi_cxx_version=$(apt-cache madison intel-oneapi-compiler-dpcpp-cpp | awk '{ print $3 }' | grep "^${compiler_version//./\\.}" | head -1)
+  oneapi_fortran_version=$(apt-cache madison intel-oneapi-compiler-fortran | awk '{ print $3 }' | grep "^${compiler_version//./\\.}" | head -1)
+  packages+=("intel-oneapi-compiler-dpcpp-cpp-${oneapi_cxx_version}")
+  packages+=("intel-oneapi-compiler-fortran-${oneapi_fortran_version}")
+fi
+
+if [[ "@MPI@" == "intel-oneapi-mpi" ]]; then
+  mpi_package_version=$(apt-cache madison intel-oneapi-mpi-devel | awk '{ print $3 }' | grep "^${mpi_version//./\\.}" | head -1)
+  packages+=("intel-oneapi-mpi-devel=${mpi_package_version}")
+fi
+
+if ((${#packages[@]} > 0)); then
+  sudo apt-get install -y "${packages[@]}"
+fi
