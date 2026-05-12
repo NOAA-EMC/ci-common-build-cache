@@ -3,9 +3,6 @@ spack:
   concretizer:
     unify: true
   specs:
-  # Include ufs-weather-model just for testing; it will be deleted from container
-  - ufs-weather-model app=S2SWA
-  # Individual deps (pinned versions are at least as new as in ufs_common.lua):
   - jasper
   - libpng
   - hdf5@1.14.5
