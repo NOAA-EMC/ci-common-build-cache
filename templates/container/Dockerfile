@@ -79,15 +79,12 @@ COPY --from=builder /opt/spack-helpers /opt/spack-helpers
 ENV SPACK_ROOT=/opt/spack \
     PATH=/opt/spack/bin:$PATH
 
-# Register the vendored package repository in this image's Spack config.
-RUN /bin/bash -lc 'source /opt/spack/share/spack/setup-env.sh && (spack repo list | grep -q "/opt/spack/spack-packages" || spack repo add /opt/spack/spack-packages)'
-
 RUN { \
         echo '#!/bin/sh' \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
       && echo '. $SPACK_ROOT/share/spack/setup-env.sh' \
-      && echo 'spack repo list | grep -q "/opt/spack/spack-packages" || spack repo add /opt/spack/spack-packages >/dev/null 2>&1' \
+      && echo 'spack repo add /opt/spack/spack-packages >/dev/null 2>&1' \
       && echo '. /opt/spack-helpers/source_me.sh 2>&1 > /dev/null' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo 'export PATH=/usr/bin:$PATH' \
