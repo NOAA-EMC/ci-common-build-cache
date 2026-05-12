@@ -193,7 +193,6 @@ jobs:
 
           # Push individual packages to GitHub Packages build cache (OCI repo).
           spack buildcache push --unsigned --without-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
-          spack buildcache update-index emc-common-build-cache
 
           # Push packages to a local filesystem build cache for use in the Docker build.
           fs_buildcache=/tmp/spack-buildcache
