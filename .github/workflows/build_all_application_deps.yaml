@@ -98,7 +98,7 @@ jobs:
 
           # Materialize spack-packages directly under $SPACK_ROOT.
           spack_packages_repo_url=https://github.com/spack/spack-packages
-          spack repo add "$spack_packages_repo_url" --destination '$spack/spack-packages'
+          spack repo add "$spack_packages_repo_url" '$spack/spack-packages'
           spack_packages_commit=$(git -C "$SPACK_ROOT/spack-packages" rev-parse HEAD || true)
           if [[ -z "${spack_packages_commit}" ]]; then
             echo "Unable to resolve commit for ${SPACK_ROOT}/spack-packages"
