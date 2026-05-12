@@ -239,6 +239,9 @@ jobs:
             echo "        - gcc-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
             echo "        - g++-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
             echo "        - gfortran-${{ matrix.config.compiler-version }}" >> $SPACK_ENV/spack.yaml
+          else # if oneapi or classic
+            echo "        - gpg" >> $SPACK_ENV/spack.yaml
+            echo "        - wget" >> $SPACK_ENV/spack.yaml
           fi
 
 
