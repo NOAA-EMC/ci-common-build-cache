@@ -22,7 +22,7 @@ spack:
   - sp@2.5.0
   - w3emc@2.12
   - gftl-shared
-  - mapl@2.54.2 
+  - mapl@2.53 ~shared ~f2py
   - scotch
   - cmake
   - gmake
