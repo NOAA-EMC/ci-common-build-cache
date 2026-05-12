@@ -180,11 +180,6 @@ jobs:
           app_rc=$?
           set -e
 
-          if [[ "${app}" == "ufs-weather-model" && ${app_rc} -eq 0 ]]; then
-            spack uninstall -y ufs-weather-model
-            spack remove -f ufs-weather-model
-          fi
-
           # Generate container image for this application with view
           echo "Creating consolidated container image for ${app} with unified view"
           label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
