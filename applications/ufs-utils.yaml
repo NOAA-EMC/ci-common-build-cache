@@ -1,0 +1,39 @@
+spack:
+  view: false
+  concretizer:
+    unify: true
+  specs:
+  - jasper
+  - g2@3.5.1
+  - ip
+  - sp@2.5.0
+  - netcdf-c
+  - netcdf-fortran
+  - bacio@2.4.1
+  - nemsio
+  - w3emc@2.10.0
+  - sigio
+  - libpng
+  - nccmp
+  - esmf@8.6.1
+  - nco
+  packages:
+    jasper:
+      variants: +jpeg
+    python:
+      version: ['3.12']
+    esmf:
+      variants: '~xerces ~pnetcdf +shared +external-parallelio'
+    mapl:
+      variants: '~pflogger ~fargparse ~extdata2g'
+    netcdf-c:
+      version: ['4.9.2']
+      variants: '+dap +mpi ~parallel-netcdf ~szip build_system=cmake'
+    cmake:
+      version: ['3.29']
+    hdf5:
+      version: ['1.14.5']
+      variants: '+mpi'
+      require:
+      - any_of: ['+threadsafe']
+        when: '%intel'

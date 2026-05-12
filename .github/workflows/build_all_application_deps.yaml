@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        application: [ufs-weather-model, gsi, nceplibs-develop, nceplibs-numbered]
+        application: [ufs-weather-model, gsi, nceplibs-develop, nceplibs-numbered, ufs-utils]
         config:
         - {compiler: gcc, compiler-version: "13", os: ubuntu-24.04, mpi: mpich, mpi-version: ":"}
         - {compiler: classic, compiler-version: "2023.2.1", os: ubuntu-24.04, mpi: intel-oneapi-mpi, mpi-version: "2021.17"}
@@ -23,6 +23,8 @@ jobs:
         - application: gsi
           config: {compiler: oneapi}
         - application: ufs-weather-model
+          config: {compiler: classic}
+        - application: ufs-utils
           config: {compiler: classic}
     runs-on: ${{ matrix.config.os }}
     permissions:
