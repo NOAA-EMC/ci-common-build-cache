@@ -23,7 +23,7 @@ elif [[ "@COMPILER@" == "oneapi" ]]; then
 fi
 
 if [[ "@MPI@" == "intel-oneapi-mpi" ]]; then
-  packages+=("intel-oneapi-mpi-devel=${mpi_version}")
+  packages+=("intel-oneapi-mpi-devel-${mpi_version}")
 fi
 
 if ((${#packages[@]} > 0)); then
