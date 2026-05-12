@@ -88,7 +88,6 @@ RUN { \
       && echo 'export SPACK_ROOT=/opt/spack' \
       && echo 'export PATH=/opt/spack/bin:$PATH' \
       && echo '. $SPACK_ROOT/share/spack/setup-env.sh' \
-      && echo 'spack repo add /opt/spack/spack-packages >/dev/null 2>&1' \
       && echo '.' {{ paths.environment }}/activate.sh \
       && echo '. /opt/spack-helpers/source_me.sh >/dev/null 2>&1' \
       && echo 'export PATH=/usr/bin:$PATH' \
