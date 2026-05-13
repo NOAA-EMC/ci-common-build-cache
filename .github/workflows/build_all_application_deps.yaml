@@ -218,14 +218,9 @@ jobs:
           # Configure trust for signed packages from this build cache
           # Import both public and private keys into Spack's GPG keyring
           echo "${GPG_PUBLIC_KEY:?}" > /tmp/spack-signing-key.asc
-          spack gpg trust /tmp/spack-signing-key.asc
+          spack gpg init | cat
+          spack gpg trust /tmp/spack-signing-key.asc | cat
           
-          # Import private key into Spack's GPG keyring for signing
-          _spack_shell_wrapper gpg init
-          # Get Spack's GPG home (typically $SPACK_ROOT/opt/spack/gpg)
-          SPACK_GNUPGHOME="${SPACK_ROOT}/opt/spack/gpg"
-          gpg --armor --export-secret-keys ${SPACK_GPG_KEY_ID} | \
-            gpg --homedir "${SPACK_GNUPGHOME}" --batch --import
           echo "Signature verification and signing enabled for key ${SPACK_GPG_KEY_ID}"
 
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
