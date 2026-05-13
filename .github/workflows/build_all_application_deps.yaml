@@ -241,7 +241,7 @@ jobs:
           # Push packages to a local filesystem build cache for use in the Docker build.
           fs_buildcache=/tmp/spack-buildcache
           mkdir -p ${fs_buildcache}
-          spack buildcache push --key "${SPACK_GPG_KEY_ID}" --with-build-dependencies ${fs_buildcache}
+          spack buildcache push --unsigned --with-build-dependencies ${fs_buildcache}
 
           spack config remove 'config:template_dirs'
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
