@@ -61,7 +61,7 @@ jobs:
           # Install Cosign for container image signing
           COSIGN_VERSION="2.2.4"
           curl -fsSL "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64" -o /tmp/cosign
-          sudo install -m 755 /tmp/cosign /usr/local/bin/cosign
+          sudo install -m 755 /tmp/cosign /usr/bin/cosign
           cosign version
 
       - name: "Get Spack"
