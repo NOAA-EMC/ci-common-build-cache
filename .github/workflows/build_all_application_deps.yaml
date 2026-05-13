@@ -213,7 +213,8 @@ jobs:
           spack config add 'config:build_stage:~/spack'
 
           # Configure trust for signed packages from this build cache
-          spack gpg trust "${SPACK_GPG_KEY_ID:?}"
+          echo "${GPG_PUBLIC_KEY}" > /tmp/spack-signing-key.asc
+          spack gpg trust /tmp/spack-signing-key.asc
           echo "Signature verification enabled for key ${SPACK_GPG_KEY_ID}"
 
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
