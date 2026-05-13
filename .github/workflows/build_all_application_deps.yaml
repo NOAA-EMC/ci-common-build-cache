@@ -56,12 +56,13 @@ jobs:
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           gpg-connect-agent reloadagent /bye || true
 
-      - name: "Setup Podman for image signing"
-        env:
-          GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
+      - name: "Install Cosign"
         run: |
-          chmod +x ${GITHUB_WORKSPACE}/scripts/setup-podman-signing.sh
-          ${GITHUB_WORKSPACE}/scripts/setup-podman-signing.sh
+          # Install Cosign for container image signing
+          COSIGN_VERSION="2.2.4"
+          curl -fsSL "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64" -o /tmp/cosign
+          sudo install -m 755 /tmp/cosign /usr/local/bin/cosign
+          cosign version
 
       - name: "Get Spack"
         uses: spack/setup-spack@v3
@@ -89,9 +90,13 @@ jobs:
           COMPILER_NAME: ${{ matrix.config.compiler }}
           GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
           GPG_PUBLIC_KEY: ${{ secrets.SPACK_SIGNING_PUBLIC_KEY }}
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
-          # Mask token
+          # Mask sensitive values
           echo "::add-mask::${OCI_TOKEN}"
+          echo "::add-mask::${COSIGN_KEY}"
+          echo "::add-mask::${COSIGN_PASSWORD}"
           
           if [ "${{ runner.debug }}" == 1 ]; then set -x; fi
           
@@ -236,7 +241,7 @@ jobs:
           # Push individual packages to GitHub Packages build cache (OCI repo).
           spack buildcache push --key "${SPACK_GPG_KEY_ID}" --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
-          # Push packages to a local filesystem build cache for use in the Podman build.
+          # Push packages to a local filesystem build cache for use in the Docker build.
           fs_buildcache=/tmp/spack-buildcache
           mkdir -p ${fs_buildcache}
           spack buildcache push --unsigned --with-build-dependencies ${fs_buildcache}
@@ -245,7 +250,7 @@ jobs:
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
           rm $SPACK_ROOT/share/spack/templates/container -rf
           spack repo remove custom_repo
-          # Ensure nceplibs directory exists for Podman build context (create empty if not nceplibs app)
+          # Ensure nceplibs directory exists for Docker build context (create empty if not nceplibs app)
           if [[ ! -d nceplibs ]]; then
             mkdir -p nceplibs
           fi
@@ -327,44 +332,48 @@ jobs:
           gpg --armor --export ${SPACK_GPG_KEY_ID} > ${SPACK_ENV}/spack-signing-public.asc
           echo "Exported public key for container image"
           
-          echo "::group:: Podman build"
+          echo "::group:: Docker build"
           # Mount build cache and spack-packages as volumes (available throughout build)
-          podman build --format=docker \
+          docker build \
             --volume ${SPACK_ROOT}/spack-packages:/spack-packages:ro \
             --volume ${fs_buildcache}:/spack-buildcache:ro \
             -t ${image_ref} .
           echo "::endgroup::"
           
           # Login using stdin (token already masked at script start)
-          printf '%s' "${OCI_TOKEN}" | podman login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING' || true
+          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING' || true
           
-          echo "::group:: Podman push with GPG signature"
-          # Push and sign the image with the same GPG key used for Spack packages
-          # Using process substitution for secure passphrase handling (never touches filesystem)
-          GNUPGHOME=~/.gnupg podman push \
-            --sign-by ${SPACK_GPG_KEY_ID} \
-            --sign-passphrase-file <(echo "${GPG_PASSPHRASE}") \
-            ${image_ref}
+          echo "::group:: Docker push"
+          docker push ${image_ref}
           echo "::endgroup::"
 
           # Record immutable digest reference for reproducible pulls.
-          image_with_digest=$(podman image inspect ${image_ref} --format '{{range .RepoDigests}}{{println .}}{{end}}' | head -n1)
+          image_with_digest=$(docker image inspect ${image_ref} --format '{{range .RepoDigests}}{{println .}}{{end}}' | head -n1)
           repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
           
-          # Export signature information
-          sigstore_dir="${HOME}/.local/share/containers/sigstore"
-          sig_count=$(find "${sigstore_dir}" -type f -name "signature-*" 2>/dev/null | wc -l)
-          echo "Generated ${sig_count} signature(s) in sigstore"
+          # Sign the container image with Cosign
+          echo "::group:: Cosign signing"
+          export COSIGN_PASSWORD="${COSIGN_PASSWORD:?}"
+          echo "${COSIGN_KEY:?}" > /tmp/cosign.key
+          cosign sign --yes --key /tmp/cosign.key "${image_ref}@sha256:${repo_digest}"
+          rm -f /tmp/cosign.key
+          echo "::endgroup::"
           
           {
-            echo "### Container image (GPG-signed)"
+            echo "### Container image (Cosign-signed)"
             echo "- Tag: \`${image_ref}\`"
-            echo "- Digest: \`${repo_digest}\`"
+            echo "- Digest: \`sha256:${repo_digest}\`"
             echo "- Tag w/digest: \`${image_with_digest}\`"
-            echo "- Signed with GPG key: \`${SPACK_GPG_KEY_ID}\`"
-            echo "- Signatures: ${sig_count} stored in sigstore"
+            echo "- Signed with: Cosign"
+            echo ""
+            echo "**Verify signature:**"
+            echo "\`\`\`bash"
+            echo "cosign verify --key cosign.pub ${image_ref}@sha256:${repo_digest}"
+            echo "\`\`\`"
+            echo ""
+            echo "**Note:** Spack packages inside are also GPG-signed with key \`${SPACK_GPG_KEY_ID}\`."
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
