@@ -1,14 +1,15 @@
 name: common-build-cache
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
+#  push:
+#    branches: [main]
 # Do a full rebuild from scratch midnight UTC Saturday:
   schedule:
     - cron: '0 0 * * SAT'
 
 jobs:
   common-build-cache:
+    environment: spack-signing
     strategy:
       fail-fast: false
       matrix:
@@ -32,6 +33,37 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
+
+      - name: "Setup GPG for package signing"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.SPACK_SIGNING_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
+          GPG_PUBLIC_KEY: ${{ secrets.SPACK_SIGNING_PUBLIC_KEY }}
+        run: |
+          echo "::add-mask::${GPG_PRIVATE_KEY}"
+          echo "::add-mask::${GPG_PASSPHRASE}"
+          echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
+          # Get key ID for signing
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep "NOAA EMC common build cache" -B 3 | awk '{if ($1=="sec") print $2}' | cut -d'/' -f2)
+          echo "SPACK_GPG_KEY_ID=${KEY_ID}" >> $GITHUB_ENV
+          echo "Package signing enabled with key: ${KEY_ID}"
+            
+          # Configure GPG for non-interactive use
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpg-connect-agent reloadagent /bye || true
+
+      - name: "Install Cosign for container image signing"
+        run: |
+          COSIGN_VERSION="v2.4.1"
+          curl -sLO "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+          sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+          sudo chmod +x /usr/local/bin/cosign
+          cosign version
+
 
       - name: "Get Spack"
         uses: spack/setup-spack@v3
@@ -57,7 +89,11 @@ jobs:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPILER_NAME: ${{ matrix.config.compiler }}
+          GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
         run: |
+          # Mask token
+          echo "::add-mask::${OCI_TOKEN}"
+          
           if [ "${{ runner.debug }}" == 1 ]; then set -x; fi
           
           # Wrap spack command to echo before executing
@@ -176,9 +212,13 @@ jobs:
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
           spack config add 'config:build_stage:~/spack'
 
+          # Configure trust for signed packages from this build cache
+          spack gpg trust "${SPACK_GPG_KEY_ID:?}"
+          echo "Signature verification enabled for key ${SPACK_GPG_KEY_ID}"
+
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
           set +e
-          spack install --include-build-deps --no-check-signature --show-log-on-error --fail-fast $NOCACHE
+          spack install --include-build-deps --show-log-on-error --fail-fast $NOCACHE
           app_rc=$?
           set -e
 
@@ -189,12 +229,12 @@ jobs:
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
 
           # Push individual packages to GitHub Packages build cache (OCI repo).
-          spack buildcache push --unsigned --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
+          spack buildcache push --key "${SPACK_GPG_KEY_ID}" --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           # Push packages to a local filesystem build cache for use in the Docker build.
           fs_buildcache=/tmp/spack-buildcache
           mkdir -p ${fs_buildcache}
-          spack buildcache push --unsigned --with-build-dependencies ${fs_buildcache}
+          spack buildcache push --key "${SPACK_GPG_KEY_ID}" --with-build-dependencies ${fs_buildcache}
 
           spack config remove 'config:template_dirs'
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
@@ -248,6 +288,8 @@ jobs:
                   - gpg
                   - wget
                   - sudo
+                  - curl
+                  - ca-certificates
           EOF
 
           spack config blame
@@ -275,15 +317,38 @@ jobs:
             echo "Filesystem build cache does not exist: ${fs_buildcache}"
             exit 1
           fi
+          
+          # Export public key for inclusion in the Docker image
+          gpg --armor --export ${SPACK_GPG_KEY_ID} > ${SPACK_ENV}/spack-signing-public.asc
+          echo "Exported public key for Docker image"
+          
           echo "::group:: Docker build"
           docker buildx build --load \
             --build-context spack_buildcache=${fs_buildcache} \
             --build-context spack_packages=${SPACK_ROOT}/spack-packages \
             -t ${image_ref} .
           echo "::endgroup::"
-          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
+          
+          # Login using stdin (token already masked at script start)
+          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING'
+          
           echo "::group:: Docker push"
           docker push ${image_ref}
+          echo "::endgroup::"
+
+          # Sign the Docker image using Cosign with GPG key
+          echo "::group:: Docker image signing"
+          export COSIGN_PASSWORD="${GPG_PASSPHRASE}"
+          cosign sign --yes --key gpg://${SPACK_GPG_KEY_ID} ${image_ref}
+          echo "Container image signed with GPG key: ${SPACK_GPG_KEY_ID}"
+          echo "::endgroup::"
+          
+          # Verify the signature
+          echo "::group:: Verify Docker image signature"
+          # Use public key from secrets for verification
+          echo "${GPG_PUBLIC_KEY}" > /tmp/public-key.asc
+          cosign verify --key /tmp/public-key.asc ${image_ref}
+          echo "Signature verification successful"
           echo "::endgroup::"
 
           # Record immutable digest reference for reproducible pulls.
@@ -296,6 +361,17 @@ jobs:
             echo "- Tag: \`${image_ref}\`"
             echo "- Digest: \`${repo_digest}\`"
             echo "- Tag w/digest: \`${image_with_digest}\`"
+            echo "- Signed: ✅ Yes (GPG key: \`${SPACK_GPG_KEY_ID}\`)" 
+            echo ""
+            echo "#### Verify signature:"
+            echo "\`\`\`bash"
+            echo "# The public key is embedded in the image at /etc/spack-signing-public.asc"
+            echo "# Or download from: https://github.com/NOAA-EMC/ci-common-build-cache/releases/download/may2026-signing-key/spack-signing-public.asc"
+            echo ""
+            echo "# Verify image"
+            echo "cosign verify --key /etc/spack-signing-public.asc ${image_ref}"
+            echo "# Or: cosign verify --key spack-signing-public.asc ${image_ref}"
+            echo "\`\`\`"
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
@@ -315,6 +391,9 @@ jobs:
           OCI_USERNAME: ${{ github.repository_owner }}
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Mask token
+          echo "::add-mask::${OCI_TOKEN}"
+          
           for compiler in gcc oneapi classic; do
             spack mirror add emc-common-build-cache-$compiler oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache-$compiler
             spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache-$compiler
