@@ -25,16 +25,15 @@ COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 COPY nceplibs {{ paths.environment }}/nceplibs
 
-# Copy spack-packages and build cache from volume mounts
+# Copy spack-packages from volume mount (needed in final image)
 RUN cp -r /spack-packages /opt/spack/spack-packages
-RUN cp -r /spack-buildcache /spack-buildcache
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
 RUN spack --env {{ paths.environment }} repo add '{{ paths.environment }}/custom_repo'
 RUN cat {{ paths.environment }}/spack.yaml
 
-# Install from local build cache
+# Install from local build cache (accessed directly from volume mount)
 RUN spack mirror add local-build-cache file:///spack-buildcache && \
     spack --env {{ paths.environment }} install --cache-only --include-build-deps --no-check-signature --fail-fast && \
     spack mirror remove local-build-cache
