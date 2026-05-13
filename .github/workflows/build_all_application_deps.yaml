@@ -54,6 +54,8 @@ jobs:
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          echo "max-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
           gpg-connect-agent reloadagent /bye || true
 
       - name: "Install Podman for container image signing"
@@ -355,15 +357,11 @@ jobs:
           echo "    sigstore-staging: file:///tmp/podman-signatures" >> ~/.config/containers/registries.d/ghcr.io.yaml
           mkdir -p /tmp/podman-signatures
           
-          # Cache GPG passphrase in the agent using gpg-preset-passphrase
+          # Cache GPG passphrase in the agent by performing a test signing operation
           echo "Caching GPG passphrase for signing..."
-          GPG_KEYGRIP=$(gpg --with-keygrip --list-secret-keys ${SPACK_GPG_KEY_ID} | grep -A1 "^\s*ssb" | tail -1 | awk '{print $3}')
-          if [ -z "$GPG_KEYGRIP" ]; then
-            # Try getting the primary key keygrip if no subkey
-            GPG_KEYGRIP=$(gpg --with-keygrip --list-secret-keys ${SPACK_GPG_KEY_ID} | grep "Keygrip" | head -1 | awk '{print $3}')
-          fi
-          echo "Using keygrip: ${GPG_KEYGRIP}"
-          echo "${GPG_PASSPHRASE}" | /usr/lib/gnupg/gpg-preset-passphrase --preset ${GPG_KEYGRIP}
+          echo "test" | gpg --batch --pinentry-mode loopback --passphrase "${GPG_PASSPHRASE}" --sign --armor --local-user ${SPACK_GPG_KEY_ID} -o /tmp/test.sig
+          rm -f /tmp/test.sig
+          echo "GPG passphrase cached successfully"
           
           # Set environment for GPG agent
           export GPG_TTY=$(tty)
