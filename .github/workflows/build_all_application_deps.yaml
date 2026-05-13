@@ -247,6 +247,7 @@ jobs:
           else # if oneapi or classic
             echo "        - gpg" >> $SPACK_ENV/spack.yaml
             echo "        - wget" >> $SPACK_ENV/spack.yaml
+            echo "        - sudo" >> $SPACK_ENV/spack.yaml
           fi
 
 
