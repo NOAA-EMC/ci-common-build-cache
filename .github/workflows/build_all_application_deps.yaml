@@ -355,9 +355,20 @@ jobs:
           echo "    sigstore-staging: file:///tmp/podman-signatures" >> ~/.config/containers/registries.d/ghcr.io.yaml
           mkdir -p /tmp/podman-signatures
           
-          # Push with signature (GPG passphrase via stdin)
-          echo "${GPG_PASSPHRASE}" | \
-            gpg --batch --pinentry-mode loopback --passphrase-fd 0 --sign /dev/null 2>/dev/null || true
+          # Cache GPG passphrase in the agent using gpg-preset-passphrase
+          echo "Caching GPG passphrase for signing..."
+          GPG_KEYGRIP=$(gpg --with-keygrip --list-secret-keys ${SPACK_GPG_KEY_ID} | grep -A1 "^\s*ssb" | tail -1 | awk '{print $3}')
+          if [ -z "$GPG_KEYGRIP" ]; then
+            # Try getting the primary key keygrip if no subkey
+            GPG_KEYGRIP=$(gpg --with-keygrip --list-secret-keys ${SPACK_GPG_KEY_ID} | grep "Keygrip" | head -1 | awk '{print $3}')
+          fi
+          echo "Using keygrip: ${GPG_KEYGRIP}"
+          echo "${GPG_PASSPHRASE}" | /usr/lib/gnupg/gpg-preset-passphrase --preset ${GPG_KEYGRIP}
+          
+          # Set environment for GPG agent
+          export GPG_TTY=$(tty)
+          
+          # Push with signature
           podman push --sign-by ${SPACK_GPG_KEY_ID} ${image_ref}
           echo "Container image pushed and signed with GPG key: ${SPACK_GPG_KEY_ID}"
           echo "::endgroup::"
