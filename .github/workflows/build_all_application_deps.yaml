@@ -333,10 +333,10 @@ jobs:
           echo "Exported public key for container image"
           
           echo "::group:: Docker build"
-          # Mount build cache and spack-packages as volumes (available throughout build)
+          # Mount build cache and spack-packages as build contexts (available throughout build)
           docker buildx build \
-            --build-context ${SPACK_ROOT}/spack-packages:/spack-packages:ro,z \
-            --build-context ${fs_buildcache}:/spack-buildcache:ro,z \
+            --build-context spack-packages=${SPACK_ROOT}/spack-packages \
+            --build-context spack-buildcache=${fs_buildcache} \
             -t ${image_ref} .
           echo "::endgroup::"
           
