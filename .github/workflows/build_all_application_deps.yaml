@@ -334,9 +334,9 @@ jobs:
           
           echo "::group:: Docker build"
           # Mount build cache and spack-packages as volumes (available throughout build)
-          docker build \
-            --volume ${SPACK_ROOT}/spack-packages:/spack-packages:ro \
-            --volume ${fs_buildcache}:/spack-buildcache:ro \
+          docker buildx build \
+            --build-context ${SPACK_ROOT}/spack-packages:/spack-packages:ro,z \
+            --build-context ${fs_buildcache}:/spack-buildcache:ro,z \
             -t ${image_ref} .
           echo "::endgroup::"
           
