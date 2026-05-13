@@ -1,5 +1,5 @@
 # Podman-compatible Dockerfile for Spack environment containerization
-# Build with: podman build --volume <buildcache>:/spack-buildcache:ro,z --volume <packages>:/tmp/spack-packages:ro,z
+# Build with: podman build --format=docker --volume <packages>:/spack-packages:ro --volume <buildcache>:/spack-buildcache:ro
 {% if render_phase.bootstrap %}
 {{ bootstrap.recipe }}
 
@@ -25,15 +25,16 @@ COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 COPY nceplibs {{ paths.environment }}/nceplibs
 
-# Copy spack-packages from volume mount (provided via --volume at build time)
-RUN cp -r /tmp/spack-packages /opt/spack/spack-packages
+# Copy spack-packages and build cache from volume mounts
+RUN cp -r /spack-packages /opt/spack/spack-packages
+RUN cp -r /spack-buildcache /spack-buildcache
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
 RUN spack --env {{ paths.environment }} repo add '{{ paths.environment }}/custom_repo'
 RUN cat {{ paths.environment }}/spack.yaml
 
-# Install from local build cache (provided via --volume at build time)
+# Install from local build cache
 RUN spack mirror add local-build-cache file:///spack-buildcache && \
     spack --env {{ paths.environment }} install --cache-only --include-build-deps --no-check-signature --fail-fast && \
     spack mirror remove local-build-cache

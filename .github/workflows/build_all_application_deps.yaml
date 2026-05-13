@@ -328,9 +328,10 @@ jobs:
           echo "Exported public key for container image"
           
           echo "::group:: Podman build"
-          podman build \
-            --volume ${fs_buildcache}:/spack-buildcache:ro,z \
-            --volume ${SPACK_ROOT}/spack-packages:/tmp/spack-packages:ro,z \
+          # Mount build cache and spack-packages as volumes (available throughout build)
+          podman build --format=docker \
+            --volume ${SPACK_ROOT}/spack-packages:/spack-packages:ro \
+            --volume ${fs_buildcache}:/spack-buildcache:ro \
             -t ${image_ref} .
           echo "::endgroup::"
           
