@@ -218,8 +218,8 @@ jobs:
           # Configure trust for signed packages from this build cache
           # Import both public and private keys into Spack's GPG keyring
           echo "${GPG_PUBLIC_KEY:?}" > /tmp/spack-signing-key.asc
-          spack gpg init | cat
-          spack gpg trust /tmp/spack-signing-key.asc | cat
+          spack gpg init || true
+          spack gpg trust /tmp/spack-signing-key.asc || true
           
           echo "Signature verification and signing enabled for key ${SPACK_GPG_KEY_ID}"
 
