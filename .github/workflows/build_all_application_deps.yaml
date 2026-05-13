@@ -391,23 +391,22 @@ EOF
           repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
-          {
-            echo "### Container image"
-            echo "- Tag: \`${image_ref}\`"
-            echo "- Digest: \`${repo_digest}\`"
-            echo "- Tag w/digest: \`${image_with_digest}\`"
-            echo "- Signed: ✅ Yes (GPG key: \`${SPACK_GPG_KEY_ID}\`)" 
-            echo ""
-            echo "#### Verify signature:"
-            echo "\`\`\`bash"
-            echo "# The public key is embedded in the image at /etc/spack-signing-public.asc"
-            echo "# Or download from: https://github.com/NOAA-EMC/ci-common-build-cache/releases/download/may2026-signing-key/spack-signing-public.asc"
-            echo ""
-            echo "# Verify image"
-            echo "cosign verify --key /etc/spack-signing-public.asc ${image_ref}"
-            echo "# Or: cosign verify --key spack-signing-public.asc ${image_ref}"
-            echo "\`\`\`"
-          } >> ${GITHUB_STEP_SUMMARY}
+          cat >> ${GITHUB_STEP_SUMMARY} <<SUMMARY
+          ### Container image
+          - Tag: \`${image_ref}\`
+          - Digest: \`${repo_digest}\`
+          - Tag w/digest: \`${image_with_digest}\`
+          - Signed: ✅ Yes (GPG key: \`${SPACK_GPG_KEY_ID}\`)
+          
+          #### Verify signature:
+          \`\`\`bash
+          # Import the public key (embedded in image or from GitHub release)
+          docker run --rm ${image_ref} cat /etc/spack-signing-public.asc | gpg --import
+          
+          # Verify with skopeo (requires policy.json configuration)
+          skopeo inspect --raw docker://${image_ref}
+          \`\`\`
+SUMMARY
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
 
