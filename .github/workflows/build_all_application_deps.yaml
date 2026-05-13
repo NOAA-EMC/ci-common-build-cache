@@ -90,6 +90,7 @@ jobs:
           OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPILER_NAME: ${{ matrix.config.compiler }}
           GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
+          GPG_PUBLIC_KEY: ${{ secrets.SPACK_SIGNING_PUBLIC_KEY }}
         run: |
           # Mask token
           echo "::add-mask::${OCI_TOKEN}"
