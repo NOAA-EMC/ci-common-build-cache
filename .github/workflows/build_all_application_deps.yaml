@@ -34,7 +34,7 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: "Setup GPG for package and container signing"
+      - name: "Setup GPG for package signing"
         env:
           GPG_PRIVATE_KEY: ${{ secrets.SPACK_SIGNING_KEY }}
           GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
@@ -46,7 +46,7 @@ jobs:
           # Get key ID for signing
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep "NOAA EMC common build cache" -B 3 | awk '{if ($1=="sec") print $2}' | cut -d'/' -f2)
           echo "SPACK_GPG_KEY_ID=${KEY_ID}" >> $GITHUB_ENV
-          echo "Package and container signing enabled with key: ${KEY_ID}"
+          echo "Package signing enabled with key: ${KEY_ID}"
             
           # Configure GPG for non-interactive use
           mkdir -p ~/.gnupg
@@ -54,19 +54,7 @@ jobs:
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
-          echo "max-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
           gpg-connect-agent reloadagent /bye || true
-
-      - name: "Install Podman for container image signing"
-        run: |
-          # Ubuntu 24.04 has Podman 4.9+, Ubuntu 22.04 has Podman 3.4+
-          # Both support --sign-by flag
-          sudo apt-get update
-          sudo apt-get install -y podman skopeo
-          podman --version
-          skopeo --version
-
 
       - name: "Get Spack"
         uses: spack/setup-spack@v3
@@ -328,9 +316,9 @@ jobs:
             exit 1
           fi
           
-          # Export public key for inclusion in the container image
+          # Export public key for inclusion in the Docker image
           gpg --armor --export ${SPACK_GPG_KEY_ID} > ${SPACK_ENV}/spack-signing-public.asc
-          echo "Exported public key for container image"
+          echo "Exported public key for Docker image"
           
           echo "::group:: Docker build"
           docker buildx build --load \
@@ -339,60 +327,15 @@ jobs:
             -t ${image_ref} .
           echo "::endgroup::"
           
-          # Save Docker image and load into Podman for GPG-signed push
-          echo "::group:: Transfer image to Podman"
-          docker save ${image_ref} | podman load
-          echo "::endgroup::"
+          # Login using stdin (token already masked at script start)
+          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING'
           
-          # Login to registry with Podman
-          printf '%s' "${OCI_TOKEN}" | podman login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING'
-          
-          # Push and sign the container image using GPG (same key as Spack packages)
-          echo "::group:: Podman push with GPG signing"
-          # Configure signature storage location in registry
-          mkdir -p ~/.config/containers/registries.d
-          echo "docker:" > ~/.config/containers/registries.d/ghcr.io.yaml
-          echo "  ghcr.io:" >> ~/.config/containers/registries.d/ghcr.io.yaml
-          echo "    sigstore: https://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache-signatures" >> ~/.config/containers/registries.d/ghcr.io.yaml
-          echo "    sigstore-staging: file:///tmp/podman-signatures" >> ~/.config/containers/registries.d/ghcr.io.yaml
-          mkdir -p /tmp/podman-signatures
-          
-          # Cache GPG passphrase in the agent by performing a test signing operation
-          echo "Caching GPG passphrase for signing..."
-          echo "test" | gpg --batch --pinentry-mode loopback --passphrase "${GPG_PASSPHRASE}" --sign --armor --local-user ${SPACK_GPG_KEY_ID} -o /tmp/test.sig
-          rm -f /tmp/test.sig
-          echo "GPG passphrase cached successfully"
-          
-          # Set environment for GPG agent
-          export GPG_TTY=$(tty)
-          
-          # Push with signature
-          podman push --sign-by ${SPACK_GPG_KEY_ID} ${image_ref}
-          echo "Container image pushed and signed with GPG key: ${SPACK_GPG_KEY_ID}"
-          echo "::endgroup::"
-          
-          # Verify the signature using skopeo
-          echo "::group:: Verify container image signature"
-          # Create policy.json for verification
-          echo "{" > ~/.config/containers/policy.json
-          echo "  \"default\": [{\"type\": \"insecureAcceptAnything\"}]," >> ~/.config/containers/policy.json
-          echo "  \"transports\": {" >> ~/.config/containers/policy.json
-          echo "    \"docker\": {" >> ~/.config/containers/policy.json
-          echo "      \"ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache\": [" >> ~/.config/containers/policy.json
-          echo "        {" >> ~/.config/containers/policy.json
-          echo "          \"type\": \"signedBy\"," >> ~/.config/containers/policy.json
-          echo "          \"keyType\": \"GPGKeys\"," >> ~/.config/containers/policy.json
-          echo "          \"keyPath\": \"${SPACK_ENV}/spack-signing-public.asc\"" >> ~/.config/containers/policy.json
-          echo "        }" >> ~/.config/containers/policy.json
-          echo "      ]" >> ~/.config/containers/policy.json
-          echo "    }" >> ~/.config/containers/policy.json
-          echo "  }" >> ~/.config/containers/policy.json
-          echo "}" >> ~/.config/containers/policy.json
-          skopeo inspect --raw docker://${image_ref} > /dev/null && echo "Signature verification successful"
+          echo "::group:: Docker push"
+          docker push ${image_ref}
           echo "::endgroup::"
 
           # Record immutable digest reference for reproducible pulls.
-          image_with_digest=$(podman image inspect ${image_ref} --format '{{range .RepoDigests}}{{.}}{{end}}')
+          image_with_digest=$(docker image inspect ${image_ref} --format '{{join .RepoDigests "\n"}}')
           repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
@@ -401,16 +344,6 @@ jobs:
             echo "- Tag: \`${image_ref}\`"
             echo "- Digest: \`${repo_digest}\`"
             echo "- Tag w/digest: \`${image_with_digest}\`"
-            echo "- Signed: ✅ Yes (GPG key: \`${SPACK_GPG_KEY_ID}\`)"
-            echo ""
-            echo "#### Verify signature:"
-            echo "\`\`\`bash"
-            echo "# Import the public key (embedded in image or from GitHub release)"
-            echo "docker run --rm ${image_ref} cat /etc/spack-signing-public.asc | gpg --import"
-            echo ""
-            echo "# Verify with skopeo (requires policy.json configuration)"
-            echo "skopeo inspect --raw docker://${image_ref}"
-            echo "\`\`\`"
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
