@@ -340,8 +340,10 @@ jobs:
           
           echo "::group:: Podman push with GPG signature"
           # Push and sign the image with the same GPG key used for Spack packages
+          # Using process substitution for secure passphrase handling (never touches filesystem)
           GNUPGHOME=~/.gnupg podman push \
             --sign-by ${SPACK_GPG_KEY_ID} \
+            --sign-passphrase-file <(echo "${GPG_PASSPHRASE}") \
             ${image_ref}
           echo "::endgroup::"
 
