@@ -349,12 +349,10 @@ jobs:
           echo "::group:: Podman push with GPG signing"
           # Configure signature storage location in registry
           mkdir -p ~/.config/containers/registries.d
-          cat > ~/.config/containers/registries.d/ghcr.io.yaml <<EOF
-docker:
-  ghcr.io:
-    sigstore: https://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache-signatures
-    sigstore-staging: file:///tmp/podman-signatures
-EOF
+          echo "docker:" > ~/.config/containers/registries.d/ghcr.io.yaml
+          echo "  ghcr.io:" >> ~/.config/containers/registries.d/ghcr.io.yaml
+          echo "    sigstore: https://ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache-signatures" >> ~/.config/containers/registries.d/ghcr.io.yaml
+          echo "    sigstore-staging: file:///tmp/podman-signatures" >> ~/.config/containers/registries.d/ghcr.io.yaml
           mkdir -p /tmp/podman-signatures
           
           # Push with signature (GPG passphrase via stdin)
@@ -367,22 +365,20 @@ EOF
           # Verify the signature using skopeo
           echo "::group:: Verify container image signature"
           # Create policy.json for verification
-          cat > ~/.config/containers/policy.json <<EOF
-{
-  "default": [{"type": "insecureAcceptAnything"}],
-  "transports": {
-    "docker": {
-      "ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache": [
-        {
-          "type": "signedBy",
-          "keyType": "GPGKeys",
-          "keyPath": "${SPACK_ENV}/spack-signing-public.asc"
-        }
-      ]
-    }
-  }
-}
-EOF
+          echo "{" > ~/.config/containers/policy.json
+          echo "  \"default\": [{\"type\": \"insecureAcceptAnything\"}]," >> ~/.config/containers/policy.json
+          echo "  \"transports\": {" >> ~/.config/containers/policy.json
+          echo "    \"docker\": {" >> ~/.config/containers/policy.json
+          echo "      \"ghcr.io/${OCI_USERNAME,,}/ci-common-build-cache\": [" >> ~/.config/containers/policy.json
+          echo "        {" >> ~/.config/containers/policy.json
+          echo "          \"type\": \"signedBy\"," >> ~/.config/containers/policy.json
+          echo "          \"keyType\": \"GPGKeys\"," >> ~/.config/containers/policy.json
+          echo "          \"keyPath\": \"${SPACK_ENV}/spack-signing-public.asc\"" >> ~/.config/containers/policy.json
+          echo "        }" >> ~/.config/containers/policy.json
+          echo "      ]" >> ~/.config/containers/policy.json
+          echo "    }" >> ~/.config/containers/policy.json
+          echo "  }" >> ~/.config/containers/policy.json
+          echo "}" >> ~/.config/containers/policy.json
           skopeo inspect --raw docker://${image_ref} > /dev/null && echo "Signature verification successful"
           echo "::endgroup::"
 
@@ -391,22 +387,22 @@ EOF
           repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
-          cat >> ${GITHUB_STEP_SUMMARY} <<SUMMARY
-          ### Container image
-          - Tag: \`${image_ref}\`
-          - Digest: \`${repo_digest}\`
-          - Tag w/digest: \`${image_with_digest}\`
-          - Signed: ✅ Yes (GPG key: \`${SPACK_GPG_KEY_ID}\`)
-          
-          #### Verify signature:
-          \`\`\`bash
-          # Import the public key (embedded in image or from GitHub release)
-          docker run --rm ${image_ref} cat /etc/spack-signing-public.asc | gpg --import
-          
-          # Verify with skopeo (requires policy.json configuration)
-          skopeo inspect --raw docker://${image_ref}
-          \`\`\`
-SUMMARY
+          {
+            echo "### Container image"
+            echo "- Tag: \`${image_ref}\`"
+            echo "- Digest: \`${repo_digest}\`"
+            echo "- Tag w/digest: \`${image_with_digest}\`"
+            echo "- Signed: ✅ Yes (GPG key: \`${SPACK_GPG_KEY_ID}\`)"
+            echo ""
+            echo "#### Verify signature:"
+            echo "\`\`\`bash"
+            echo "# Import the public key (embedded in image or from GitHub release)"
+            echo "docker run --rm ${image_ref} cat /etc/spack-signing-public.asc | gpg --import"
+            echo ""
+            echo "# Verify with skopeo (requires policy.json configuration)"
+            echo "skopeo inspect --raw docker://${image_ref}"
+            echo "\`\`\`"
+          } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
 
