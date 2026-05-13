@@ -56,6 +56,13 @@ jobs:
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           gpg-connect-agent reloadagent /bye || true
 
+      - name: "Setup Podman for image signing"
+        env:
+          GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
+        run: |
+          chmod +x ${GITHUB_WORKSPACE}/scripts/setup-podman-signing.sh
+          ${GITHUB_WORKSPACE}/scripts/setup-podman-signing.sh
+
       - name: "Get Spack"
         uses: spack/setup-spack@v3
 
@@ -229,7 +236,7 @@ jobs:
           # Push individual packages to GitHub Packages build cache (OCI repo).
           spack buildcache push --key "${SPACK_GPG_KEY_ID}" --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
-          # Push packages to a local filesystem build cache for use in the Docker build.
+          # Push packages to a local filesystem build cache for use in the Podman build.
           fs_buildcache=/tmp/spack-buildcache
           mkdir -p ${fs_buildcache}
           spack buildcache push --unsigned --with-build-dependencies ${fs_buildcache}
@@ -238,7 +245,7 @@ jobs:
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
           rm $SPACK_ROOT/share/spack/templates/container -rf
           spack repo remove custom_repo
-          # Ensure nceplibs directory exists for Docker COPY (create empty if not nceplibs app)
+          # Ensure nceplibs directory exists for Podman build context (create empty if not nceplibs app)
           if [[ ! -d nceplibs ]]; then
             mkdir -p nceplibs
           fi
@@ -316,34 +323,45 @@ jobs:
             exit 1
           fi
           
-          # Export public key for inclusion in the Docker image
+          # Export public key for inclusion in the container image
           gpg --armor --export ${SPACK_GPG_KEY_ID} > ${SPACK_ENV}/spack-signing-public.asc
-          echo "Exported public key for Docker image"
+          echo "Exported public key for container image"
           
-          echo "::group:: Docker build"
-          docker buildx build --load \
-            --build-context spack_buildcache=${fs_buildcache} \
-            --build-context spack_packages=${SPACK_ROOT}/spack-packages \
+          echo "::group:: Podman build"
+          podman build \
+            --volume ${fs_buildcache}:/spack-buildcache:ro,z \
+            --volume ${SPACK_ROOT}/spack-packages:/tmp/spack-packages:ro,z \
             -t ${image_ref} .
           echo "::endgroup::"
           
           # Login using stdin (token already masked at script start)
-          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING'
+          printf '%s' "${OCI_TOKEN}" | podman login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING' || true
           
-          echo "::group:: Docker push"
-          docker push ${image_ref}
+          echo "::group:: Podman push with GPG signature"
+          # Push and sign the image with the same GPG key used for Spack packages
+          GNUPGHOME=~/.gnupg podman push \
+            --sign-by ${SPACK_GPG_KEY_ID} \
+            ${image_ref}
           echo "::endgroup::"
 
           # Record immutable digest reference for reproducible pulls.
-          image_with_digest=$(docker image inspect ${image_ref} --format '{{join .RepoDigests "\n"}}')
+          image_with_digest=$(podman image inspect ${image_ref} --format '{{range .RepoDigests}}{{println .}}{{end}}' | head -n1)
           repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
+          
+          # Export signature information
+          sigstore_dir="${HOME}/.local/share/containers/sigstore"
+          sig_count=$(find "${sigstore_dir}" -type f -name "signature-*" 2>/dev/null | wc -l)
+          echo "Generated ${sig_count} signature(s) in sigstore"
+          
           {
-            echo "### Container image"
+            echo "### Container image (GPG-signed)"
             echo "- Tag: \`${image_ref}\`"
             echo "- Digest: \`${repo_digest}\`"
             echo "- Tag w/digest: \`${image_with_digest}\`"
+            echo "- Signed with GPG key: \`${SPACK_GPG_KEY_ID}\`"
+            echo "- Signatures: ${sig_count} stored in sigstore"
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi

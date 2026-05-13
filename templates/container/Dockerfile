@@ -1,4 +1,5 @@
-# syntax=docker/dockerfile:1.4
+# Podman-compatible Dockerfile for Spack environment containerization
+# Build with: podman build --volume <buildcache>:/spack-buildcache:ro,z --volume <packages>:/tmp/spack-packages:ro,z
 {% if render_phase.bootstrap %}
 {{ bootstrap.recipe }}
 
@@ -23,15 +24,17 @@ set -o noclobber \
 COPY spack.lock {{ paths.environment }}/spack.lock
 COPY custom_repo {{ paths.environment }}/custom_repo
 COPY nceplibs {{ paths.environment }}/nceplibs
-RUN --mount=type=bind,from=spack_packages,source=.,target=/tmp/spack-packages \
-    cp -r /tmp/spack-packages /opt/spack/spack-packages
+
+# Copy spack-packages from volume mount (provided via --volume at build time)
+RUN cp -r /tmp/spack-packages /opt/spack/spack-packages
 
 # Install the software, remove unnecessary deps
 #RUN spack --env {{ paths.environment }} repo remove custom_repo
 RUN spack --env {{ paths.environment }} repo add '{{ paths.environment }}/custom_repo'
 RUN cat {{ paths.environment }}/spack.yaml
-RUN --mount=type=bind,from=spack_buildcache,source=.,target=/spack-buildcache,readonly \
-    spack mirror add local-build-cache file:///spack-buildcache && \
+
+# Install from local build cache (provided via --volume at build time)
+RUN spack mirror add local-build-cache file:///spack-buildcache && \
     spack --env {{ paths.environment }} install --cache-only --include-build-deps --no-check-signature --fail-fast && \
     spack mirror remove local-build-cache
 #RUN spack --env {{ paths.environment }} gc --keep-build-dependencies -y
@@ -78,6 +81,10 @@ COPY --from=builder /opt/spack/spack-packages /opt/spack/spack-packages
 
 # Copy Spack extension helpers into the requested final image location
 COPY --from=builder /opt/spack-helpers /opt/spack-helpers
+
+# Copy public GPG signing key for Spack package and container signature verification
+COPY spack-signing-public.asc /etc/spack-signing-public.asc
+RUN gpg --import /etc/spack-signing-public.asc 2>/dev/null || true
 
 # Set up Spack environment for use in container
 ENV SPACK_ROOT=/opt/spack \
