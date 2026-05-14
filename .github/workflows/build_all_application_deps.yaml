@@ -32,7 +32,7 @@ jobs:
       packages: write
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v4
+        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
 
       - name: "Setup GPG for package signing"
         env:
@@ -60,18 +60,20 @@ jobs:
         run: |
           # Install Cosign for container image signing
           COSIGN_VERSION="2.2.4"
+          COSIGN_CHECKSUM="97a6a1e15668a75fc4ff7a4dc4cb2f098f929cbea2f12faa9de31db6b42b17d7"
           curl -fsSL "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64" -o /tmp/cosign
+          echo "${COSIGN_CHECKSUM}  /tmp/cosign" | sha256sum --check --strict
           sudo install -m 755 /tmp/cosign /usr/bin/cosign
           cosign version
 
       - name: "Get Spack"
-        uses: spack/setup-spack@v3
+        uses: spack/setup-spack@eb0523e3b331d170d917083e9df79e1f11b29b0e
 
       - name: "Get spack-helpers extension"
-        uses: NOAA-EMC/spack-helpers@develop
+        uses: NOAA-EMC/spack-helpers@a03506c608ad8752b75a0e696fd02bc103abed69
 
       - name: "Get Intel"
-        uses: NOAA-EMC/ci-install-intel-toolkit@develop
+        uses: NOAA-EMC/ci-install-intel-toolkit@1c0fe0215da91950496a9c67ba2a6791b775c783
         if: ${{ matrix.config.compiler == 'classic' || matrix.config.compiler == 'oneapi' }}
         with:
           install-classic: ${{ matrix.config.compiler == 'classic' }}
@@ -141,8 +143,8 @@ jobs:
           # Materialize spack-packages directly under $SPACK_ROOT.
           spack_packages_repo_url=https://github.com/spack/spack-packages
           spack repo add "$spack_packages_repo_url" '$spack/spack-packages'
-          # Comment this next line if very recent commits are needed:
-          git -C "$SPACK_ROOT/spack-packages" checkout $(git -C "$SPACK_ROOT/spack-packages" rev-list -n 1 --before="4 days ago" develop)
+          # Use a commit from 4 days ago to avoid immediate supply chain attacks
+          git -C "$SPACK_ROOT/spack-packages" checkout $(git -C "$SPACK_ROOT/spack-packages" rev-list -n 1 --before="$(date -d '4 days ago' --iso-8601)" develop)
           spack_packages_commit=$(git -C "$SPACK_ROOT/spack-packages" rev-parse HEAD || true)
           if [[ -z "${spack_packages_commit}" ]]; then
             echo "Unable to resolve commit for ${SPACK_ROOT}/spack-packages"
@@ -385,7 +387,7 @@ jobs:
       packages: write
     steps:
       - name: "Get Spack"
-        uses: spack/setup-spack@v3
+        uses: spack/setup-spack@eb0523e3b331d170d917083e9df79e1f11b29b0e
 
       - name: "Update buildcache index"
         shell: spack-bash {0}
