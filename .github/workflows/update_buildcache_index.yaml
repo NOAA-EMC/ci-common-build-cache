@@ -1,9 +1,11 @@
 name: update-buildcache-index
 on:
-  workflow_run:
-    workflows: ["common-build-cache"]
-    types:
-      - completed
+  workflow_dispatch:
+  #workflow_run:
+  #  workflows: ["common-build-cache"]
+  #  types:
+  #    - completed
+  push:
 
 jobs:
   update-buildcache-index:
