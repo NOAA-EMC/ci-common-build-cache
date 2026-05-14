@@ -68,8 +68,6 @@ jobs:
 
       - name: "Get Spack"
         uses: spack/setup-spack@eb0523e3b331d170d917083e9df79e1f11b29b0e
-        with:
-          spack_ref: HEAD~20
 
       - name: "Get spack-helpers extension"
         uses: NOAA-EMC/spack-helpers@a03506c608ad8752b75a0e696fd02bc103abed69
