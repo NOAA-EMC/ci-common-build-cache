@@ -1,4 +1,5 @@
-![workflowstatus](https://github.com/NOAA-EMC/ci-common-build-cache/actions/workflows/build_all_application_deps.yaml/badge.svg)
+![buildworkflowstatus](https://github.com/NOAA-EMC/ci-common-build-cache/actions/workflows/build_all_application_deps.yaml/badge.svg)
+![indexworkflowstatus](https://github.com/NOAA-EMC/ci-common-build-cache/actions/workflows/update_buildcache_index.yaml/badge.svg)
 
 # ci-common-build-cache
 
