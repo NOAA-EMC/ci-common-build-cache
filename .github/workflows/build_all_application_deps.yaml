@@ -381,29 +381,3 @@ jobs:
           } >> ${GITHUB_STEP_SUMMARY}
 
           if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
-
-  update-buildcache-index:
-    needs: [common-build-cache]
-    runs-on: ubuntu-24.04
-    permissions:
-      packages: write
-    steps:
-      - name: "Get Spack"
-        uses: spack/setup-spack@eb0523e3b331d170d917083e9df79e1f11b29b0e
-        with:
-          spack_ref: HEAD~20
-
-      - name: "Update buildcache index"
-        shell: spack-bash {0}
-        env:
-          OCI_USERNAME: ${{ github.repository_owner }}
-          OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Mask token
-          echo "::add-mask::${OCI_TOKEN}"
-          
-          for compiler in gcc oneapi classic; do
-            spack mirror add emc-common-build-cache-$compiler oci://ghcr.io/$OCI_USERNAME/ci-common-build-cache-$compiler
-            spack mirror set --push --oci-username-variable OCI_USERNAME --oci-password-variable OCI_TOKEN emc-common-build-cache-$compiler
-            spack buildcache update-index emc-common-build-cache-$compiler
-          done
