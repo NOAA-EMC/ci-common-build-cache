@@ -73,7 +73,7 @@ jobs:
         uses: NOAA-EMC/spack-helpers@c141b9084cd99ee0ab2f1a376eed300e7a2c5eb9
 
       - name: "Get Intel"
-        uses: NOAA-EMC/ci-install-intel-toolkit@1c0fe0215da91950496a9c67ba2a6791b775c783
+        uses: NOAA-EMC/ci-install-intel-toolkit@28a31cb26634b85acbc23375fdce5cc2025c5747
         if: ${{ matrix.config.compiler == 'classic' || matrix.config.compiler == 'oneapi' }}
         with:
           install-classic: ${{ matrix.config.compiler == 'classic' }}
