@@ -70,7 +70,7 @@ jobs:
         uses: spack/setup-spack@eb0523e3b331d170d917083e9df79e1f11b29b0e
 
       - name: "Get spack-helpers extension"
-        uses: NOAA-EMC/spack-helpers@a03506c608ad8752b75a0e696fd02bc103abed69
+        uses: NOAA-EMC/spack-helpers@c141b9084cd99ee0ab2f1a376eed300e7a2c5eb9
 
       - name: "Get Intel"
         uses: NOAA-EMC/ci-install-intel-toolkit@1c0fe0215da91950496a9c67ba2a6791b775c783
