@@ -14,10 +14,10 @@ class BufrTestFiles(Package):
     license("UNKNOWN", checked_by="github_user1")
 
     version(
-        "12.4.0",
-        sha256="db756d2de2c994a33628d3d777bcfa43ad34c3ff54159df2d97426d3e6371449",
+        "12.2.0",
+        sha256="0ebc27f6260dc964d38c3966fb583e3ef68279a9879fc28cd4d923e2fc2ea42c",
         extension="tgz",
-        url = "https://ftp.emc.ncep.noaa.gov/static_files/public/bufr-12.4.0.tgz"
+        url = "https://ftp.emc.ncep.noaa.gov/static_files/public/bufr-12.2.0.tgz"
     )
 
     def install(self, spec, prefix):
