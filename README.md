@@ -43,3 +43,5 @@ To verify a container key with `cosign`:
 wget https://github.com/NOAA-EMC/ci-common-build-cache/releases/download/may2026-cosign-key/cosign.pub # immutable release
 cosign verify --key cosign.pub ghcr.io/noaa-emc/ci-common-build-cache/gsi-ubuntu-24.04-gcc-13-mpich-x:latest
 ```
+
+_Generative AI tools are used to assist with developing this code. The code has been reviewed, edited, and validated by NWS staff._
