@@ -154,7 +154,7 @@ jobs:
           echo "spack-packages commit: ${spack_packages_commit}"
 
           cp -r $GITHUB_WORKSPACE/custom_repo $SPACK_ENV/.
-          spack repo add '$env/custom_repo'
+          spack repo add 'custom_repo'
 
           # Set up compilers & MPI for this application
           COMPILER=${{ matrix.config.compiler }}@${{ matrix.config.compiler-version }}
