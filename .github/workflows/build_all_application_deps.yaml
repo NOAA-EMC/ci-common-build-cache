@@ -185,6 +185,10 @@ jobs:
           done
           spack filter-compilers $allowedcompilerspecs --keep-only
 
+          # Add python@3.13.18 to avoid https://nvd.nist.gov/vuln/detail/cve-2026-115557
+          spack checksum --batch --add-to-package python 3.12.16
+          spack config add 'packages:python:require:["@=3.12.16"]'
+
           echo "::group:: cat spack.yaml"
           cat $SPACK_ENV/spack.yaml
           echo "::endgroup::"
