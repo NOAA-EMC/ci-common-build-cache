@@ -84,7 +84,7 @@ COPY --from=builder /opt/spack/spack-packages /opt/spack/spack-packages
 # Copy Spack extension helpers into the requested final image location
 COPY --from=builder /opt/spack-helpers /opt/spack-helpers
 
-# Copy public GPG signing key for Spack package and container signature verification
+# Retain the public GPG key for compatibility with signed Spack packages.
 COPY spack-signing-public.asc /etc/spack-signing-public.asc
 RUN gpg --import /etc/spack-signing-public.asc 2>/dev/null || true
 
