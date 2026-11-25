@@ -1,0 +1,14 @@
+add-cpes-if-none: false
+only-fixed: true
+
+ignore:
+  # Don't match 'tar' with 'node-tar'
+  - reason: "Spack builds GNU tar (C), not npm node-tar"
+    package:
+      name: tar
+    match-details:
+      - matcher: cpe-matcher
+        searched-by:
+          cpes:
+            - "cpe:2.3:a:isaacs:node-tar:*"
+            - "cpe:2.3:a:tar_project:tar:*"
