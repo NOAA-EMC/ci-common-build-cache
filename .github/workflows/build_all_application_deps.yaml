@@ -253,8 +253,11 @@ jobs:
               missing_sbom=1
               continue
             fi
-            echo "Scanning $sbom"
-            "$grype" "sbom:$sbom" --add-cpes-if-none -o json > "$RUNNER_TEMP/grype-report.json"
+            echo "Scanning $sbom."
+            echo "::group::.grype.yaml:"
+            cat .grype.yaml
+            echo "::endgroup::"
+            "$grype" "sbom:$sbom" --config .grype.yaml -o json > "$RUNNER_TEMP/grype-report.json"
             jq -e '(.matches | type) == "array"' "$RUNNER_TEMP/grype-report.json" > /dev/null
             jq -r '.matches[] | [.artifact.name, .artifact.version, .vulnerability.id, .vulnerability.severity, .vulnerability.dataSource] | @tsv' "$RUNNER_TEMP/grype-report.json" >> "$findings"
           done < "$RUNNER_TEMP/spack-managed-prefixes"
