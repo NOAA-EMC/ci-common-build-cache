@@ -16,6 +16,8 @@ $ spack mirror add emc-common-build-cache oci://ghcr.io/NOAA-EMC/ci-common-build
 
 Spack OCI build-cache packages are not GPG-signed. The Cosign signatures described below apply to the container images, not the Spack build cache. Builds and publishing share a runner, so separating credentials into later steps reduces their direct exposure but does not isolate them from malicious build code.
 
+After installation, the workflow scans each installed Spack-managed package's SPDX SBOM with Grype. Findings appear in the job summary; high or critical findings, missing SBOMs, and scan errors block publication. External packages do not have Spack-generated SBOMs. SBOMs can also list dependencies that are not installed. Grype generates CPE identifiers from package names and versions, so matches may be incomplete or incorrect and should be reviewed.
+
 ### Requirements
 
 Any GitHub Actions CI workflow using this Spack build cache must provide the following:
