@@ -2,6 +2,12 @@ add-cpes-if-none: false
 only-fixed: true
 
 ignore:
+  - namespace: github:language:javascript
+  - namespace: github:language:ruby
+  - namespace: github:language:php
+  - namespace: github:language:dotnet
+  - namespace: nvd:cpe
+    fix-state: unknown
   # Don't match 'tar' with 'node-tar'
   - reason: "Spack builds GNU tar (C), not npm node-tar"
     package:
