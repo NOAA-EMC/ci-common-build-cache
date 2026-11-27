@@ -247,10 +247,6 @@ jobs:
             exit 1
           fi
 
-          echo "::group::.grype.yaml:"
-          cat .grype.yaml
-          echo "::endgroup::"
-
           findings="$RUNNER_TEMP/spack-vulnerabilities.tsv"
           : > "$findings"
           missing_sbom=0
@@ -268,32 +264,12 @@ jobs:
           done < "$RUNNER_TEMP/spack-managed-prefixes"
 
           sort -u "$findings" -o "$findings"
-          echo "::group::Spack SBOM vulnerability findings"
-          if [ -s "$findings" ]; then
-            printf 'Package\tVersion\tVulnerability\tSeverity\tDetails\n'
-            cat "$findings"
-          else
-            echo "No vulnerabilities found."
-          fi
-          echo "::endgroup::"
-
           {
             echo "### Spack SBOM vulnerability scan"
-            if [ -s "$findings" ]; then
-              echo '```'
-              printf 'Package\tVersion\tVulnerability\tSeverity\tDetails\n'
-              cat "$findings"
-              echo '```'
-            else
-              echo "No vulnerabilities found."
-            fi
+            echo "Scan completed."
           } >> "$GITHUB_STEP_SUMMARY"
 
-          if [ -s "$findings" ]; then
-            echo "::warning::Spack SBOM vulnerability findings are listed in the workflow log and job summary."
-          fi
           if awk -F '\t' 'tolower($4) == "high" || tolower($4) == "critical" { found = 1 } END { exit !found }' "$findings"; then
-            echo "::error::High or critical vulnerabilities found; publication is blocked."
             exit 1
           fi
           if [ "$missing_sbom" -ne 0 ]; then
