@@ -218,9 +218,9 @@ jobs:
           set -e
 
           {
-            echo "APP_RC=${app_rc}"
-            echo "SPACK_PACKAGES_REPO_URL=${spack_packages_repo_url}"
-            echo "SPACK_PACKAGES_COMMIT=${spack_packages_commit}"
+            echo "app_rc=${app_rc}"
+            echo "spack_packages_repo_url=${spack_packages_repo_url}"
+            echo "spack_packages_commit=${spack_packages_commit}"
           } >> "$GITHUB_ENV"
 
       - name: "Scan Spack SBOMs"
@@ -305,7 +305,7 @@ jobs:
 
           # Preserve the partial cache when an installation failed.
           allow_missing=()
-          if [ "$APP_RC" -ne 0 ]; then allow_missing=(--allow-missing); fi
+          if [ "$app_rc" -ne 0 ]; then allow_missing=(--allow-missing); fi
 
           # Push individual packages to GitHub Packages build cache (OCI repo).
           spack buildcache push --unsigned --with-build-dependencies "${allow_missing[@]}" emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
@@ -350,8 +350,8 @@ jobs:
               labels:
                 org.opencontainers.image.spack-commit: '${spack_commit}'
                 org.opencontainers.image.spack-version: '${spack_version}'
-                org.opencontainers.image.spack-packages-origin: '${SPACK_PACKAGES_REPO_URL}'
-                org.opencontainers.image.spack-packages-commit: '${SPACK_PACKAGES_COMMIT}'
+                org.opencontainers.image.spack-packages-origin: '${spack_packages_repo_url}'
+                org.opencontainers.image.spack-packages-commit: '${spack_packages_commit}'
               strip: false
               os_packages:
                 final:
@@ -422,9 +422,9 @@ jobs:
           echo "Image digest: ${repo_digest}"
 
           {
-            echo "IMAGE_REF=${image_ref}"
-            echo "IMAGE_WITH_DIGEST=${image_with_digest}"
-            echo "REPO_DIGEST=${repo_digest}"
+            echo "image_ref=${image_ref}"
+            echo "image_with_digest=${image_with_digest}"
+            echo "repo_digest=${repo_digest}"
           } >> "$GITHUB_ENV"
 
       - name: "Sign container image"
@@ -438,22 +438,22 @@ jobs:
           key_file=$(mktemp)
           trap 'rm -f "$key_file"' EXIT
           printf '%s\n' "${COSIGN_KEY:?}" > "$key_file"
-          cosign sign --yes --key "$key_file" "${IMAGE_REF}@sha256:${REPO_DIGEST}"
+          cosign sign --yes --key "$key_file" "${image_ref}@sha256:${repo_digest}"
           echo "::endgroup::"
           
           {
             echo "### Container image (Cosign-signed)"
-            echo "- Tag: \`${IMAGE_REF}\`"
-            echo "- Digest: \`sha256:${REPO_DIGEST}\`"
-            echo "- Tag w/digest: \`${IMAGE_WITH_DIGEST}\`"
+            echo "- Tag: \`${image_ref}\`"
+            echo "- Digest: \`sha256:${repo_digest}\`"
+            echo "- Tag w/digest: \`${image_with_digest}\`"
             echo "- Signed with: Cosign"
             echo ""
             echo "**Verify signature:**"
             echo "\`\`\`bash"
-            echo "cosign verify --key cosign.pub ${IMAGE_REF}@sha256:${REPO_DIGEST}"
+            echo "cosign verify --key cosign.pub ${image_ref}@sha256:${repo_digest}"
             echo "\`\`\`"
             echo ""
             echo "**Note:** Spack OCI build-cache packages are not GPG-signed."
           } >> ${GITHUB_STEP_SUMMARY}
 
-          if [ "$APP_RC" -ne 0 ]; then echo "install-time error!"; exit 1; fi
+          if [ "$app_rc" -ne 0 ]; then echo "install-time error!"; exit 1; fi
