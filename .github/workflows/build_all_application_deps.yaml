@@ -228,7 +228,7 @@ jobs:
         run: |
           export SPACK_COLOR=never
           spack env activate ${{ matrix.application }}-env
-          source "$GITHUB_WORKSPACE/.github/scripts/scan-spack-sboms.sh"
+          source "$GITHUB_WORKSPACE/scripts/scan-spack-sboms.sh"
 
       - name: "Publish packages and container image"
         shell: spack-bash {0}
