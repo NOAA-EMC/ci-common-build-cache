@@ -33,28 +33,18 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
+        with:
+          persist-credentials: false
 
-      - name: "Setup GPG for package signing"
+      - name: "Import public GPG key"
         env:
-          GPG_PRIVATE_KEY: ${{ secrets.SPACK_SIGNING_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
           GPG_PUBLIC_KEY: ${{ secrets.SPACK_SIGNING_PUBLIC_KEY }}
         run: |
-          echo "::add-mask::${GPG_PRIVATE_KEY}"
-          echo "::add-mask::${GPG_PASSPHRASE}"
-          echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
-          # Get key ID for signing
-          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep "NOAA EMC common build cache" -B 3 | awk '{if ($1=="sec") print $2}' | cut -d'/' -f2)
+          echo "${GPG_PUBLIC_KEY:?}" | gpg --batch --import
+          KEY_ID=$(gpg --list-keys --keyid-format LONG | grep "NOAA EMC common build cache" -B 3 | awk '{if ($1=="pub") print $2}' | cut -d'/' -f2)
+          : "${KEY_ID:?Unable to find the public GPG key}"
           echo "SPACK_GPG_KEY_ID=${KEY_ID}" >> $GITHUB_ENV
-          echo "Package signing enabled with key: ${KEY_ID}"
-            
-          # Configure GPG for non-interactive use
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          gpg-connect-agent reloadagent /bye || true
+          echo "Imported public GPG key: ${KEY_ID}"
 
       - name: "Install Cosign"
         run: |
@@ -84,30 +74,22 @@ jobs:
           mpi-version: ${{ matrix.config.mpi-version }}
           compiler-setup: ${{ matrix.config.compiler }}
 
-      - name: "Build and cache packages"
+      - name: "Build packages"
         shell: spack-bash {0}
         env:
           OCI_USERNAME: ${{ github.repository_owner }}
-          OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPILER_NAME: ${{ matrix.config.compiler }}
-          GPG_PASSPHRASE: ${{ secrets.SPACK_SIGNING_KEY_PASSPHRASE }}
           GPG_PUBLIC_KEY: ${{ secrets.SPACK_SIGNING_PUBLIC_KEY }}
-          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
-          # Mask sensitive values
-          echo "::add-mask::${OCI_TOKEN}"
-          echo "::add-mask::${COSIGN_KEY}"
-          echo "::add-mask::${COSIGN_PASSWORD}"
-          
           if [ "${{ runner.debug }}" == 1 ]; then set -x; fi
           
           # Wrap spack command to echo before executing
           spack() {
             echo "::group:: spack $@"
             _spack_shell_wrapper "$@";
+            local rc=$?
             echo "::endgroup::"
-            return $?
+            return $rc
           }
           
           # Relocate and asynchronously remove /usr/local to
@@ -203,6 +185,10 @@ jobs:
           done
           spack filter-compilers $allowedcompilerspecs --keep-only
 
+          # Add python@3.13.18 to avoid https://nvd.nist.gov/vuln/detail/cve-2026-115557
+          spack checksum --batch --add-to-package python 3.12.16
+          spack config add 'packages:python:require:["@=3.12.16"]'
+
           echo "::group:: cat spack.yaml"
           cat $SPACK_ENV/spack.yaml
           echo "::endgroup::"
@@ -220,13 +206,10 @@ jobs:
           if [ ! -z '${{ github.event.schedule }}' ]; then NOCACHE="--no-cache"; fi
           spack config add 'config:build_stage:~/spack'
 
-          # Configure trust for signed packages from this build cache
-          # Import both public and private keys into Spack's GPG keyring
+          # Retain the public key for any signed packages used by the build.
           echo "${GPG_PUBLIC_KEY:?}" > /tmp/spack-signing-key.asc
           spack gpg init || true
           spack gpg trust /tmp/spack-signing-key.asc || true
-          
-          echo "Signature verification and signing enabled for key ${SPACK_GPG_KEY_ID}"
 
           # Don't immediately exit job on failed 'spack install' so we can still cache whatever was built:
           set +e
@@ -234,19 +217,56 @@ jobs:
           app_rc=$?
           set -e
 
+          {
+            echo "app_rc=${app_rc}"
+            echo "spack_packages_repo_url=${spack_packages_repo_url}"
+            echo "spack_packages_commit=${spack_packages_commit}"
+          } >> "$GITHUB_ENV"
+
+      - name: "Scan Spack SBOMs"
+        shell: spack-bash {0}
+        run: |
+          export SPACK_COLOR=never
+          spack env activate ${{ matrix.application }}-env
+          source "$GITHUB_WORKSPACE/scripts/scan-spack-sboms.sh"
+
+      - name: "Publish packages and container image"
+        shell: spack-bash {0}
+        env:
+          OCI_USERNAME: ${{ github.repository_owner }}
+          OCI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "::add-mask::${OCI_TOKEN}"
+
+          spack() {
+            echo "::group:: spack $@"
+            _spack_shell_wrapper "$@"
+            local rc=$?
+            echo "::endgroup::"
+            return $rc
+          }
+
+          app=${{ matrix.application }}
+          spack env activate ${app}-env
+          cd "$SPACK_ENV"
+
           # Generate container image for this application with view
           echo "Creating consolidated container image for ${app} with unified view"
           label=${{ matrix.config.os }}-${{ matrix.config.compiler }}-${{ matrix.config.compiler-version }}-${{ matrix.config.mpi }}-${{ matrix.config.mpi-version }}
           label=${label//:/x}
           image=$(echo ${{ matrix.config.os }} | sed 's|-|:|')
 
+          # Preserve the partial cache when an installation failed.
+          allow_missing=()
+          if [ "$app_rc" -ne 0 ]; then allow_missing=(--allow-missing); fi
+
           # Push individual packages to GitHub Packages build cache (OCI repo).
-          spack buildcache push --key "${SPACK_GPG_KEY_ID}" --with-build-dependencies emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
+          spack buildcache push --unsigned --with-build-dependencies "${allow_missing[@]}" emc-common-build-cache |& perl -pe 's/.+(Fetching|Using cached)/::debug::\1/'
 
           # Push packages to a local filesystem build cache for use in the Docker build.
           fs_buildcache=/tmp/spack-buildcache
           mkdir -p ${fs_buildcache}
-          spack buildcache push --unsigned --with-build-dependencies ${fs_buildcache}
+          spack buildcache push --unsigned --with-build-dependencies "${allow_missing[@]}" ${fs_buildcache}
 
           spack config remove 'config:template_dirs'
           spack config add "config:template_dirs:[${GITHUB_WORKSPACE}/templates/]"
@@ -312,7 +332,7 @@ jobs:
             -e 's/@COMPILER_VERSION@/${{ matrix.config.compiler-version }}/g' \
             -e 's/@MPI@/${{ matrix.config.mpi }}/g' \
             -e 's/@MPI_VERSION@/${{ matrix.config.mpi-version }}/g' \
-            "${GITHUB_WORKSPACE}/install-intel.sh.in" > install-intel.sh
+            "${GITHUB_WORKSPACE}/templates/install-intel.sh.in" > install-intel.sh
           chmod +x install-intel.sh
 
           # Generate Dockerfile using spack containerize (already in $SPACK_ENV from earlier cd)
@@ -342,8 +362,7 @@ jobs:
             -t ${image_ref} .
           echo "::endgroup::"
           
-          # Login using stdin (token already masked at script start)
-          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin 2>&1 | grep -v 'WARNING' || true
+          printf '%s' "${OCI_TOKEN}" | docker login ghcr.io -u ${OCI_USERNAME} --password-stdin
           
           echo "::group:: Docker push"
           docker push ${image_ref}
@@ -354,13 +373,25 @@ jobs:
           repo_digest=$(echo $image_with_digest | grep -Po "@sha256:\K.*")
           echo "Image tag: ${image_ref}"
           echo "Image digest: ${repo_digest}"
-          
+
+          {
+            echo "image_ref=${image_ref}"
+            echo "image_with_digest=${image_with_digest}"
+            echo "repo_digest=${repo_digest}"
+          } >> "$GITHUB_ENV"
+
+      - name: "Sign container image"
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
           # Sign the container image with Cosign
           echo "::group:: Cosign signing"
-          export COSIGN_PASSWORD="${COSIGN_PASSWORD:?}"
-          echo "${COSIGN_KEY:?}" > /tmp/cosign.key
-          cosign sign --yes --key /tmp/cosign.key "${image_ref}@sha256:${repo_digest}"
-          rm -f /tmp/cosign.key
+          : "${COSIGN_PASSWORD:?}"
+          key_file=$(mktemp)
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "${COSIGN_KEY:?}" > "$key_file"
+          cosign sign --yes --key "$key_file" "${image_ref}@sha256:${repo_digest}"
           echo "::endgroup::"
           
           {
@@ -375,7 +406,7 @@ jobs:
             echo "cosign verify --key cosign.pub ${image_ref}@sha256:${repo_digest}"
             echo "\`\`\`"
             echo ""
-            echo "**Note:** Spack packages inside are also GPG-signed with key \`${SPACK_GPG_KEY_ID}\`."
+            echo "**Note:** Spack OCI build-cache packages are not GPG-signed."
           } >> ${GITHUB_STEP_SUMMARY}
 
-          if [ $app_rc -ne 0 ]; then echo "install-time error!"; exit 1; fi
+          if [ "$app_rc" -ne 0 ]; then echo "install-time error!"; exit 1; fi
